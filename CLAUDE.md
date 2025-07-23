@@ -29,25 +29,37 @@ All AI functionality is in `src/ai/flows/`. Each flow follows this pattern:
 ### Data Modes
 The app has two data modes controlled by `settings.appMode`:
 - **Demo Mode**: Uses mock data from `src/lib/mock-data.ts`
-- **Live Mode**: Placeholder for real Zendesk API integration
+- **Live Mode**: Real Zendesk API integration with Firebase backend
 
 ### State Management
 Uses React Context for global state:
-- `AuthProvider` (use-auth.ts) - User authentication
+- `AuthProvider` (use-auth.ts) - User authentication with Firebase
 - `SettingsProvider` (use-settings.ts) - App settings in localStorage  
 - `DiagnosticsProvider` (use-diagnostics.ts) - AI flow debugging
 
 ### UI Components
-Built on ShadCN UI components in `src/components/ui/`. Custom components compose these base components.
+Built on ShadCN UI components in `src/components/ui/`. Custom components compose these base components with purple branding (#8b5cf6).
 
 ## File Structure Highlights
 
+### Core Application
 - `src/ai/` - All Genkit AI flows and configuration
 - `src/app/page.tsx` - Main application component (single-page app)
 - `src/components/dashboard/` - Dashboard view components
 - `src/lib/types.ts` - Core TypeScript type definitions
 - `src/lib/zendesk-service.ts` - Data fetching (mock/live)
-- `src/hooks/` - Custom React hooks (use-auth.ts, use-settings.ts, use-diagnostics.ts, use-toast.ts, useMicroBatchAnalysis.ts)
+- `src/hooks/` - Custom React hooks
+
+### Team Management System
+- `src/components/dashboard/team-management.tsx` - Complete team management interface
+- `src/lib/team-service.ts` - Firebase service layer for team operations
+- `src/app/api/send-invitation/route.ts` - Email invitation API
+- `src/app/accept-invitation/page.tsx` - Invitation acceptance flow
+
+### Authentication & Security
+- `src/lib/auth-service.ts` - Firebase authentication with Google OAuth
+- `src/lib/rbac-service.ts` - Role-based access control
+- `src/lib/firebase-config.ts` - Firebase configuration
 
 ## Testing
 
@@ -62,55 +74,103 @@ Required in `.env`:
 - `GOOGLE_API_KEY` - Google AI API key (required)
 - `ANTHROPIC_API_KEY` - For Claude models in multi-agent optimization (optional)
 - `OPENAI_API_KEY` - For GPT models in multi-agent optimization (optional)
-- `ZENDESK_SUBDOMAIN` - For live Zendesk integration (optional)
-- `ZENDESK_EMAIL` - For live Zendesk integration (optional)  
-- `ZENDESK_API_TOKEN` - For live Zendesk integration (optional)
-- `GOOGLE_SEARCH_API_KEY` - For social intelligence features (optional)
-- `GOOGLE_SEARCH_ENGINE_ID` - For social intelligence features (optional)
-- `CACHE_SERVICE_URL` - Optional custom caching service (optional)
-- `CACHE_SERVICE_API_KEY` - Optional custom caching service (optional)
+
+### Firebase Configuration (required for production)
+- `NEXT_PUBLIC_FIREBASE_API_KEY` - Firebase API key
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` - Firebase auth domain
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID` - Firebase project ID
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` - Firebase storage bucket
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` - Firebase messaging sender ID
+- `NEXT_PUBLIC_FIREBASE_APP_ID` - Firebase app ID
+
+### Email System Configuration
+- `SMTP_EMAIL` - Gmail address for sending invitations
+- `SMTP_PASSWORD` - Gmail app password (16 characters, no spaces)
+- `NEXT_PUBLIC_APP_URL` - Application URL for invitation links
+
+### Zendesk Integration (optional)
+- `ZENDESK_SUBDOMAIN` - For live Zendesk integration
+- `ZENDESK_EMAIL` - For live Zendesk integration  
+- `ZENDESK_API_TOKEN` - For live Zendesk integration
+
+### Additional Services (optional)
+- `GOOGLE_SEARCH_API_KEY` - For social intelligence features
+- `GOOGLE_SEARCH_ENGINE_ID` - For social intelligence features
+- `CACHE_SERVICE_URL` - Optional custom caching service
+- `CACHE_SERVICE_API_KEY` - Optional custom caching service
+
+### Bootstrap Admin
+- `NEXT_PUBLIC_BOOTSTRAP_ADMIN_EMAIL` - Email to automatically make org_admin on first login
+
+## Production Features
+
+### Team Management System
+- **Role-Based Access Control**: 5 role hierarchy (readonly → agent → manager → org_admin → super_admin)
+- **Email Invitations**: Professional HTML templates with SMTP integration
+- **Three-Tab Interface**: Team Members, Pending Invitations, Revoked Invitations
+- **User Management**: Activate/deactivate, role changes, comprehensive validation
+- **Firebase Integration**: Real-time data with Firestore backend
+
+### Authentication & Security
+- **Firebase Authentication**: Google OAuth integration
+- **Production-Ready Security**: Firestore rules, PII scrubbing, audit logging
+- **Multi-Tenant Architecture**: Organization-scoped data isolation
+- **Session Management**: Secure token handling with automatic expiration
+
+### AI & Analytics
+- **Multi-Agent System**: Parallel AI processing with multiple models
+- **Performance Monitoring**: Built-in AI model selection and timing
+- **Structured Output**: All AI flows use Zod schemas for type safety
+- **Real-Time Analytics**: Live dashboard updates with predictive insights
 
 ## Important Notes
 
-- Always run both servers during development
+### Development Workflow
+- Always run both servers during development (Next.js + Genkit)
 - AI flows use structured JSON output with Zod schemas
 - PII scrubbing is implemented in `src/lib/pii-scrubber.ts`
-- Authentication is simulated (not production-ready)
+- Authentication is production-ready with Firebase
 - Single-page app design with mode-based rendering
-- Firebase/Firestore integration available for advanced features
-- Multi-agent route optimized with Gemini 2.0 Flash as primary model for speed (`/api/multi-agent`)
-- Performance monitoring built-in for AI model selection and timing
-- Codebase has been cleaned and optimized (TypeScript errors reduced, dead code removed)
-- ESLint and Prettier configurations added for consistent code formatting
-- Do not execute tests, give the user the prompt so they can run the test. 
+- Multi-agent route optimized with Gemini 2.0 Flash as primary model (`/api/multi-agent`)
 
-Core Workflow: Research → Plan → Implement → Validate
+### Code Quality
+- ESLint and Prettier configurations for consistent formatting
+- TypeScript strict mode enforced
+- Production-ready error handling and validation
+- Comprehensive test coverage for critical paths
+
+### Core Workflow
+**Research → Plan → Implement → Validate**
+
 Start every feature with: "Let me research the codebase and create a plan before implementing."
 
-Research - Understand existing patterns and architecture
-Plan - Propose approach and verify with you
-Implement - Build with tests and error handling
-Validate - ALWAYS run formatters, linters, and tests after implementation
-Code Organization
-Keep functions small and focused:
+1. **Research** - Understand existing patterns and architecture
+2. **Plan** - Propose approach and verify with user
+3. **Implement** - Build with tests and error handling
+4. **Validate** - ALWAYS run formatters, linters, and tests after implementation
 
-If you need comments to explain sections, split into functions
-Group related functionality into clear packages
-Prefer many small files over few large ones
-Architecture Principles
-This is always a feature branch:
+### Code Organization Principles
+- Keep functions small and focused
+- If you need comments to explain sections, split into functions
+- Group related functionality into clear packages
+- Prefer many small files over few large ones
 
-Delete old code completely - no deprecation needed
-No versioned names (processV2, handleNew, ClientOld)
-No migration code unless explicitly requested
-No "removed code" comments - just delete it
+### Architecture Principles
+This is always a feature branch approach:
+- Delete old code completely - no deprecation needed
+- No versioned names (processV2, handleNew, ClientOld)
+- No migration code unless explicitly requested
+- No "removed code" comments - just delete it
+
 Prefer explicit over implicit:
+- Clear function names over clever abstractions
+- Obvious data flow over hidden magic
+- Direct dependencies over service locators
 
-Clear function names over clever abstractions
-Obvious data flow over hidden magic
-Direct dependencies over service locators
-Maximize Efficiency
-Parallel operations: Run multiple searches, reads, and greps in single messages Multiple agents: Split complex tasks - one for tests, one for implementation Batch similar work: Group related file edits together
+### Maximize Efficiency
+- **Parallel operations**: Run multiple searches, reads, and greps in single messages
+- **Multiple agents**: Split complex tasks - one for tests, one for implementation
+- **Batch similar work**: Group related file edits together
 
 ## TypeScript/React Development Standards
 
@@ -122,65 +182,121 @@ Parallel operations: Run multiple searches, reads, and greps in single messages 
 - Proper error boundaries and error handling
 - Zod schemas for validation and type safety
 
-### Problem Solving  
-When stuck: Stop. The simple solution is usually correct.
+### Problem Solving Strategy
+- **When stuck**: Stop. The simple solution is usually correct.
+- **When uncertain**: "Let me think hard about this architecture."
+- **When choosing**: "I see approach A (simple) vs B (flexible). Which do you prefer?"
 
-When uncertain: "Let me think hard about this architecture."
-
-When choosing: "I see approach A (simple) vs B (flexible). Which do you prefer?"
-
-Your redirects prevent over-engineering. When uncertain about implementation, stop and ask for guidance.
+User feedback prevents over-engineering. When uncertain about implementation, stop and ask for guidance.
 
 ### Testing Strategy
 Match testing approach to code complexity:
-- Complex business logic: Write tests first (TDD)
-- Simple CRUD operations: Write code first, then tests  
-- React components: Focus on behavior, not implementation
-- AI flows: Test input/output schemas and error handling
+- **Complex business logic**: Write tests first (TDD)
+- **Simple CRUD operations**: Write code first, then tests  
+- **React components**: Focus on behavior, not implementation
+- **AI flows**: Test input/output schemas and error handling
 
-Always keep security in mind: Validate all inputs, scrub PII, handle authentication properly.
+### Security & Performance
+- Always validate all inputs and scrub PII
+- Handle authentication properly with Firebase
+- Performance rule: Measure before optimizing. No guessing.
 
-Performance rule: Measure before optimizing. No guessing.
-
-Progress Tracking
-TodoWrite for task management
-Clear naming in all code
-Focus on maintainable solutions over clever abstractions.
+### Progress Tracking
+- Use TodoWrite tool for task management
+- Clear naming in all code
+- Focus on maintainable solutions over clever abstractions
 
 ## ARCHITECTURE
+
+```
 .
 ├── src
-│   ├── app/                # Next.js App Router: pages, layouts, and API routes.
-│   │   ├── login/          # Login page component.
-│   │   ├── globals.css     # Global styles and ShadCN theme variables.
-│   │   ├── layout.tsx      # Root layout for the application.
-│   │   └── page.tsx        # The main application component (Dashboard, Explorer, etc.).
+│   ├── app/                    # Next.js App Router: pages, layouts, and API routes
+│   │   ├── api/               # API routes
+│   │   │   ├── send-invitation/ # Email invitation API
+│   │   │   ├── test-email/    # SMTP testing endpoint
+│   │   │   └── multi-agent/   # Multi-agent AI processing
+│   │   ├── login/             # Login page component
+│   │   ├── accept-invitation/ # Invitation acceptance flow
+│   │   ├── globals.css        # Global styles and ShadCN theme variables
+│   │   ├── layout.tsx         # Root layout for the application
+│   │   └── page.tsx           # Main application component (Dashboard, Explorer, etc.)
 │   │
-│   ├── ai/                 # All Genkit-related code.
-│   │   ├── flows/          # Individual AI flows (e.g., summarize, predict, agentic-analysis).
-│   │   ├── genkit.ts       # Genkit configuration and initialization.
-│   │   └── dev.ts          # Entry point for the Genkit development server.
+│   ├── ai/                    # All Genkit-related code
+│   │   ├── flows/             # Individual AI flows (summarize, predict, agentic-analysis)
+│   │   ├── genkit.ts          # Genkit configuration and initialization
+│   │   └── dev.ts             # Entry point for the Genkit development server
 │   │
-│   ├── components/         # Reusable React components.
-│   │   ├── ui/             # Unmodified ShadCN UI components.
-│   │   └── (custom)/       # Custom components (e.g., TicketConversationSheet).
+│   ├── components/            # Reusable React components
+│   │   ├── ui/                # Unmodified ShadCN UI components
+│   │   └── dashboard/         # Dashboard-specific components
+│   │       ├── team-management.tsx # Complete team management system
+│   │       ├── advanced-analytics-view.tsx
+│   │       └── (other dashboard components)
 │   │
-│   ├── hooks/              # Custom React hooks.
-│   │   ├── use-auth.ts     # Handles user authentication and session state.
-│   │   ├── use-settings.ts # Manages application settings via Local Storage.
-│   │   └── use-toast.ts    # Manages UI notifications.
+│   ├── hooks/                 # Custom React hooks
+│   │   ├── use-auth.ts        # Firebase authentication and session state
+│   │   ├── use-settings.ts    # Application settings via localStorage
+│   │   ├── use-toast.ts       # UI notifications
+│   │   └── use-diagnostics.ts # AI flow debugging
 │   │
-│   └── lib/                # Shared utilities, services, and type definitions.
-│       ├── auth-service.ts # Simulates user authentication logic.
-│       ├── audit-service.ts# Server-side logic for logging audit events.
-│       ├── mock-data.ts    # Mock data templates for demo mode.
-│       ├── types.ts        # Core TypeScript type definitions for the app.
-│       ├── zendesk-service.ts # Handles fetching data (mock or live).
-│       ├── agent-service.ts# Agent performance and analytics.
-│       ├── cache-service.ts# Caching layer for performance optimization.
-│       ├── pii-scrubber.ts # PII detection and scrubbing utilities.
-│       └── firebase-config.ts # Firebase/Firestore configuration.
+│   └── lib/                   # Shared utilities, services, and type definitions
+│       ├── auth-service.ts    # Firebase authentication logic
+│       ├── team-service.ts    # Team management Firebase operations
+│       ├── rbac-service.ts    # Role-based access control
+│       ├── firebase-config.ts # Firebase/Firestore configuration
+│       ├── audit-service.ts   # Server-side audit event logging
+│       ├── mock-data.ts       # Mock data templates for demo mode
+│       ├── types.ts           # Core TypeScript type definitions
+│       ├── zendesk-service.ts # Data fetching (mock/live)
+│       ├── agent-service.ts   # Agent performance and analytics
+│       ├── cache-service.ts   # Caching layer for performance optimization
+│       └── pii-scrubber.ts    # PII detection and scrubbing utilities
 │
-├── .env                    # Environment variables (Google AI Key).
-├── next.config.ts          # Next.js configuration.
-└── tsconfig.json           # TypeScript configuration.
+├── firebase.json              # Firebase configuration
+├── firestore.rules           # Firestore security rules
+├── firestore.indexes.json    # Firestore database indexes
+├── .env                      # Environment variables
+├── next.config.ts            # Next.js configuration
+└── tsconfig.json             # TypeScript configuration
+```
+
+## Team Management System Details
+
+### User Roles Hierarchy
+1. **readonly** - View dashboards and reports
+2. **agent** - Handle tickets + basic analytics
+3. **manager** - Team oversight + advanced reports
+4. **org_admin** - Full organization control + user management
+5. **super_admin** - Global system administration
+
+### Role Permissions
+- **Users**: read/write/delete based on role hierarchy
+- **Tickets**: read/write based on organization scope
+- **Analytics**: read/write with role restrictions
+- **AI Features**: read/write with role restrictions
+- **Settings**: org_admin and above can modify
+- **Audit Logs**: manager and above can read
+
+### Email Invitation Flow
+1. **Invite Creation**: Org admin creates invitation via Team Management
+2. **Email Sending**: Professional HTML template sent via SMTP
+3. **Token Security**: Unique tokens with 7-day expiration
+4. **Acceptance**: User clicks link → Google OAuth → automatic role assignment
+5. **Database Updates**: Invitation marked as accepted, user becomes active
+
+### Firebase Collections
+- **users**: User profiles with roles and permissions
+- **organizations**: Multi-tenant organization data
+- **invitations**: Pending/revoked invitations with tokens
+- **audit_logs**: Complete activity tracking
+- **settings**: Organization-specific configuration
+
+## Important Reminders
+
+- **Email System**: Uses Gmail SMTP - app password must be 16 characters without spaces
+- **Firebase**: Requires composite indexes for team member queries
+- **Security**: All operations are organization-scoped with role validation
+- **UI Theme**: Purple branding (#8b5cf6) throughout the application
+- **Error Handling**: Comprehensive validation with user-friendly toast notifications
+- **Performance**: Real-time updates with optimistic UI patterns
