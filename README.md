@@ -36,3 +36,4 @@ All project documentation, including setup guides, architecture overviews, and f
 *   **[Architecture Overview](./docs/ARCHITECTURE.md)**: A deep dive into the technical architecture.
 *   **[Feature Guide (Technical)](./docs/FEATURES_TECHNICAL.md)**: A granular, technical breakdown of each feature.
 *   **[Contributing Guide](./docs/CONTRIBUTING.md)**: Instructions for contributing to the project.
+# Signalcx
