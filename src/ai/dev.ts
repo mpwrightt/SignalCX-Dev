@@ -1,0 +1,22 @@
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/fetch-and-analyze-tickets.ts';
+import '@/ai/flows/batch-analyze-tickets.ts';
+import '@/ai/flows/predictive-analysis.ts';
+import '@/ai/flows/get-holistic-analysis.ts';
+import '@/ai/flows/get-performance-forecasts.ts';
+import '@/ai/flows/get-sla-prediction.ts';
+import '@/ai/flows/get-burnout-indicators.ts';
+import '@/ai/flows/get-knowledge-gaps.ts';
+import '@/ai/flows/get-ticket-analysis-details.ts';
+import '@/ai/flows/get-high-risk-ticket-analysis.ts';
+import '@/ai/flows/ai-analyst-mode.ts';
+import '@/ai/flows/cluster-tickets.ts';
+import '@/ai/flows/get-coaching-insights.ts';
+import '@/ai/flows/summarize-trends.ts';
+import '@/ai/flows/get-ticket-summary.ts';
+import '@/ai/flows/social-media-intelligence.ts';
+import '@/ai/flows/query-tickets.ts';
+import '@/ai/tools/web-search.ts';
+import '@/ai/flows/batch-identify-ticket-risks.ts';

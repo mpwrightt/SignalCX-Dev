@@ -1,0 +1,17 @@
+export const zendeskViews = [
+  "All Views",
+  "Marketplace - Missing Packages",
+  "Marketplace - Returns",
+  "Marketplace - General",
+  "Direct by TCGplayer - Orders",
+  "Seller - Applications",
+  "Seller - Feedback Disputes",
+  "Seller - Payouts",
+  "Seller - High Priority",
+  "Buyer - High Priority",
+  "Buyer - Fraud/Scam Reports",
+  "Seller - Fraud/Scam Reports",
+  "Social Media Escalations",
+  "Technical - API Support",
+  "Technical - Bug Reports",
+];

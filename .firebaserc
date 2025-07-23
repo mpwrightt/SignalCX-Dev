@@ -1,0 +1,12 @@
+
+{
+  "projects": {
+    "default": "zendesk-analyzer-prod"
+  },
+  "environment": {
+    "default": {
+      "projectId": "zendesk-analyzer-prod",
+      "storageBucket": "zendesk-analyzer-prod.appspot.com"
+    }
+  }
+}
