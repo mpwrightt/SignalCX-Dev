@@ -20,7 +20,7 @@ import {
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
-import { auth, googleProvider, db } from './firebase-config';
+import { auth, googleProvider, db, enableFirebaseNetwork } from './firebase-config';
 import type { AuthenticatedUser, Organization, UserRole, UserInvitation } from './types';
 import { getRolePermissions } from './rbac-service';
 
@@ -57,6 +57,9 @@ const demoUsers: AuthenticatedUser[] = [
  */
 export async function signInWithGoogle(): Promise<{ user: AuthenticatedUser | null, error?: string }> {
   try {
+    // Ensure Firebase network is enabled
+    await enableFirebaseNetwork();
+    
     const result = await signInWithPopup(auth, googleProvider);
     const firebaseUser = result.user;
     
@@ -156,6 +159,9 @@ export async function getUserById(id: string): Promise<AuthenticatedUser | null>
  */
 async function getOrCreateUserProfile(firebaseUser: FirebaseUser): Promise<AuthenticatedUser | null> {
   try {
+    // Ensure Firebase network is enabled
+    await enableFirebaseNetwork();
+    
     const userRef = doc(db, 'users', firebaseUser.uid);
     const userDoc = await getDoc(userRef);
     
@@ -183,22 +189,37 @@ async function getOrCreateUserProfile(firebaseUser: FirebaseUser): Promise<Authe
       // Check if user has a pending invitation
       const invitation = await checkPendingInvitation(firebaseUser.email || '');
       
+      // Check for bootstrap admin (temporary - remove in production)
+      const bootstrapAdminEmail = process.env.NEXT_PUBLIC_BOOTSTRAP_ADMIN_EMAIL;
+      const isBootstrapAdmin = bootstrapAdminEmail && firebaseUser.email === bootstrapAdminEmail;
+      
       // Create new user profile
-      const role: UserRole = invitation?.role || 'readonly';
+      const role: UserRole = isBootstrapAdmin ? 'org_admin' : (invitation?.role || 'readonly');
+      
+      // Set organization for bootstrap admin
+      const organizationId = isBootstrapAdmin ? 'signalcx-main' : invitation?.organizationId;
+      const organizationName = isBootstrapAdmin ? 'SignalCX Organization' : invitation?.organizationName;
+      
       const newUser: Partial<AuthenticatedUser> = {
         name: firebaseUser.displayName || 'Unknown',
         email: firebaseUser.email || '',
         role,
         avatar: firebaseUser.photoURL || 'https://placehold.co/32x32.png',
-        organizationId: invitation?.organizationId,
+        organizationId,
+        organizationName,
         permissions: getRolePermissions(role),
-        isActive: !!invitation, // Active if invited, inactive if self-registered
+        isActive: !!invitation || isBootstrapAdmin, // Active if invited or bootstrap admin
         emailVerified: firebaseUser.emailVerified,
         invitedBy: invitation?.invitedBy,
       };
       
+      // Clean undefined values before saving to Firestore
+      const cleanUserData = Object.fromEntries(
+        Object.entries(newUser).filter(([_, value]) => value !== undefined)
+      );
+      
       await setDoc(userRef, {
-        ...newUser,
+        ...cleanUserData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -217,6 +238,29 @@ async function getOrCreateUserProfile(firebaseUser: FirebaseUser): Promise<Authe
     }
   } catch (error) {
     console.error('Error creating user profile:', error);
+    
+    // Handle offline scenarios
+    if (error instanceof Error && error.message.includes('client is offline')) {
+      console.warn('Firebase is offline, falling back to bootstrap admin if applicable');
+      
+      // If this is the bootstrap admin, create a temporary profile
+      const bootstrapAdminEmail = process.env.NEXT_PUBLIC_BOOTSTRAP_ADMIN_EMAIL;
+      if (bootstrapAdminEmail && firebaseUser.email === bootstrapAdminEmail) {
+        return {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || 'Bootstrap Admin',
+          email: firebaseUser.email || '',
+          role: 'org_admin',
+          avatar: firebaseUser.photoURL || 'https://placehold.co/32x32.png',
+          permissions: getRolePermissions('org_admin'),
+          isActive: true,
+          emailVerified: firebaseUser.emailVerified,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    }
+    
     return null;
   }
 }

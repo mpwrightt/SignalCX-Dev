@@ -1,12 +1,12 @@
 
 {
   "projects": {
-    "default": "zendesk-analyzer-prod"
+    "default": "signalcx"
   },
   "environment": {
     "default": {
-      "projectId": "zendesk-analyzer-prod",
-      "storageBucket": "zendesk-analyzer-prod.appspot.com"
+      "projectId": "signalcx",
+      "storageBucket": "signalcx.firebasestorage.app"
     }
   }
 }

@@ -3,14 +3,10 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Loader2, TicketIcon } from 'lucide-react';
 
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Card,
@@ -22,14 +18,6 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-
-const loginSchema = z.object({
-  email: z.string().min(1, { message: 'Username or email is required.' }),
-  password: z.string().optional(),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,14 +25,6 @@ export default function LoginPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [loginMode, setLoginMode] = React.useState<'demo' | 'enterprise'>('demo');
-
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
 
   const handleLogin = async (email: string, password?: string) => {
     setIsLoading(true);
@@ -70,9 +50,6 @@ export default function LoginPage() {
     }
   };
 
-  const onLiveSubmit = (data: LoginFormValues) => {
-    handleLogin(data.email, data.password);
-  };
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
@@ -90,7 +67,7 @@ export default function LoginPage() {
                 onCheckedChange={(checked) => setLoginMode(checked ? 'enterprise' : 'demo')}
                 disabled={isLoading}
               />
-              <Label htmlFor="login-mode" className={loginMode === 'enterprise' ? 'text-foreground' : 'text-muted-foreground'}>Enterprise</Label>
+              <Label htmlFor="login-mode" className={loginMode === 'enterprise' ? 'text-foreground' : 'text-muted-foreground'}>Live</Label>
             </div>
         </CardHeader>
         {loginMode === 'demo' ? (
@@ -108,11 +85,11 @@ export default function LoginPage() {
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
                   <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Button className="w-full" onClick={() => handleLogin('manager@example.com')} disabled={isLoading}>
+                      <Button className="w-full" onClick={() => handleLogin('manager@demo.com')} disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Login as Manager
                       </Button>
-                      <Button variant="outline" className="w-full" onClick={() => handleLogin('agent@example.com')} disabled={isLoading}>
+                      <Button variant="outline" className="w-full" onClick={() => handleLogin('agent@demo.com')} disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Login as Agent
                       </Button>
@@ -121,54 +98,25 @@ export default function LoginPage() {
             </>
         ) : (
             <>
-                <CardContent>
-                   <CardTitle className="text-center mb-1">Welcome Back</CardTitle>
-                   <CardDescription className="text-center mb-4">
-                     Enter your credentials to access your dashboard.
+                <CardContent className="text-center">
+                   <CardTitle>Live Environment</CardTitle>
+                   <CardDescription className="mt-2">
+                     Sign in with your Google account to access the live application.
                    </CardDescription>
-                  <form onSubmit={form.handleSubmit(onLiveSubmit)} className="space-y-4">
-                    {error && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{error}</AlertDescription>
-                      </Alert>
-                    )}
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Username or Email</Label>
-                      <Input
-                        id="email"
-                        type="text"
-                        placeholder="Admin"
-                        {...form.register('email')}
-                        disabled={isLoading}
-                      />
-                      {form.formState.errors.email && (
-                        <p className="text-sm text-destructive">
-                          {form.formState.errors.email.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        {...form.register('password')}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Sign In
-                    </Button>
-                  </form>
+                   {error && (
+                     <Alert variant="destructive" className="mt-4 text-left">
+                       <AlertDescription>{error}</AlertDescription>
+                     </Alert>
+                   )}
                 </CardContent>
-                <CardFooter className="flex flex-col gap-4">
-                    <div className="relative w-full">
-                        <Separator />
-                        <span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-background px-2 text-xs text-muted-foreground">OR</span>
-                    </div>
-                    <Button variant="outline" className="w-full" disabled>
-                        Sign in with SSO
+                <CardFooter>
+                    <Button 
+                      className="w-full" 
+                      onClick={() => handleLogin('', '')}
+                      disabled={isLoading}
+                    >
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Sign in with Google
                     </Button>
                 </CardFooter>
             </>

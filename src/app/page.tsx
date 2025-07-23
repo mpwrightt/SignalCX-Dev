@@ -37,6 +37,8 @@ import {
   Sparkles,
   Monitor,
   Brain,
+  WifiOff,
+  Wifi,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -118,6 +120,7 @@ import { useSettings } from "@/hooks/use-settings";
 import { useDiagnostics } from "@/hooks/use-diagnostics";
 import { fetchTickets } from "@/ai/flows/fetch-and-analyze-tickets";
 import { useToast } from "@/hooks/use-toast";
+import { useNetworkStatus } from "@/hooks/use-network";
 import { useAuth } from "@/hooks/use-auth";
 import { Progress } from "@/components/ui/progress";
 import { FilterControls } from "@/components/dashboard/filter-controls";
@@ -133,6 +136,7 @@ import { TicketExplorerView } from "@/components/dashboard/ticket-explorer-view"
 import { DashboardView } from "@/components/dashboard/dashboard-view";
 import { DiagnosticsView } from "@/components/dashboard/diagnostics-view";
 import { EnterpriseUserManagement } from "@/components/dashboard/enterprise-user-management";
+import { TeamManagement } from "@/components/dashboard/team-management";
 import { getHolisticAnalysis } from "@/ai/flows/get-holistic-analysis";
 import { batchIdentifyTicketRisks } from "@/ai/flows/batch-identify-ticket-risks";
 import { getCoachingInsights } from "@/ai/flows/get-coaching-insights";
@@ -225,6 +229,7 @@ export default function DashboardPage() {
   const { user, logout, isLoading: authLoading, sessionMode } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const isOnline = useNetworkStatus();
   const [tickets, setTickets] = React.useState<AnalyzedTicket[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
@@ -232,7 +237,7 @@ export default function DashboardPage() {
   const [isAnalyzed, setIsAnalyzed] = React.useState(false);
   const [isDeepAnalyzed, setIsDeepAnalyzed] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [mode, setMode] = React.useState<'dashboard' | 'explorer' | 'users' | 'agents' | 'coaching' | 'clustering' | 'social' | 'ai-search' | 'diagnostics' | 'advanced-analytics' | 'predictive' | 'enterprise-users'>('dashboard');
+  const [mode, setMode] = React.useState<'dashboard' | 'explorer' | 'users' | 'agents' | 'coaching' | 'clustering' | 'social' | 'ai-search' | 'diagnostics' | 'advanced-analytics' | 'predictive' | 'team-management'>('dashboard');
   const [activeView, setActiveView] = React.useState<string>("All Views");
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
     from: subDays(new Date(), 29),
@@ -1570,18 +1575,6 @@ export default function DashboardPage() {
                     <span>User Management</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {user?.role === 'super_admin' || user?.role === 'org_admin' || user?.role === 'manager' ? (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      tooltip="Enterprise Users"
-                      onClick={() => setMode('enterprise-users')}
-                      isActive={mode === 'enterprise-users'}
-                    >
-                      <Settings className="h-5 w-5" />
-                      <span>Enterprise Users</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ) : null}
                 <SidebarMenuItem>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -1621,6 +1614,18 @@ export default function DashboardPage() {
               </SidebarMenu>
               <SidebarSeparator />
                 <SidebarMenu>
+                  {user?.role === 'super_admin' || user?.role === 'org_admin' || user?.role === 'manager' ? (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        tooltip="Team Management"
+                        onClick={() => setMode('team-management')}
+                        isActive={mode === 'team-management'}
+                      >
+                        <Settings className="h-5 w-5" />
+                        <span>Team Management</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ) : null}
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       tooltip="Diagnostics"
@@ -1642,6 +1647,15 @@ export default function DashboardPage() {
             <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6" suppressHydrationWarning>
               <SidebarTrigger className="sm:hidden" />
               <div className="flex-1" />
+              
+              {/* Network Status Indicator */}
+              {!isOnline && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-md text-sm">
+                  <WifiOff className="h-4 w-4" />
+                  <span>Offline</span>
+                </div>
+              )}
+              
               <div className="relative ml-auto flex-initial md:grow-0">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -1805,8 +1819,8 @@ export default function DashboardPage() {
                   historicalVolume={ticketVolumeData}
                   forecastDays={settings.forecastDays}
                 />
-              ) : mode === 'enterprise-users' ? (
-                <EnterpriseUserManagement />
+              ) : mode === 'team-management' ? (
+                <TeamManagement />
               ) : null}
             </main>
           </SidebarInset>

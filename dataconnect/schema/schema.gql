@@ -1,0 +1,46 @@
+type User @table {
+  displayName: String!
+  createdAt: Timestamp!
+  email: String
+  photoUrl: String
+}
+
+type Habit @table {
+  user: User!
+  name: String!
+  frequency: String! # e.g., "DAILY", "WEEKLY"
+  type: String! # e.g., "BOOLEAN", "NUMERIC", "TEXT"
+  createdAt: Timestamp!
+  description: String
+  unit: String # e.g., "minutes", "pages", "glasses" for NUMERIC types
+}
+
+type HabitEntry @table {
+  user: User!
+  habit: Habit!
+  entryDate: Date!
+  createdAt: Timestamp!
+  booleanValue: Boolean
+  numericValue: Float
+  textValue: String
+  note: String
+}
+
+type Goal @table {
+  user: User!
+  name: String!
+  targetValue: Float!
+  targetUnit: String!
+  deadline: Date!
+  createdAt: Timestamp!
+  description: String
+}
+
+type GoalProgress @table {
+  user: User!
+  goal: Goal!
+  progressDate: Date!
+  currentValue: Float!
+  createdAt: Timestamp!
+  note: String
+}

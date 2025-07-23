@@ -1,204 +1,76 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper functions for role checking
+    // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    function getCurrentUser() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
     
-    function getUserRole() {
-      return getCurrentUser().data.role;
-    }
-    
-    function isActive() {
-      return getCurrentUser().data.isActive == true;
-    }
-    
-    function isSuperAdmin() {
-      return getUserRole() == 'super_admin';
-    }
-    
-    function isOrgAdmin() {
-      return getUserRole() == 'org_admin';
-    }
-    
-    function isManagerOrAbove() {
-      return getUserRole() in ['super_admin', 'org_admin', 'manager'];
-    }
-    
-    function belongsToSameOrg(orgId) {
-      return getCurrentUser().data.organizationId == orgId || isSuperAdmin();
-    }
-    
-    function canManageUser(targetUserId) {
-      let currentUser = getCurrentUser().data;
-      let targetUser = get(/databases/$(database)/documents/users/$(targetUserId)).data;
-      
-      // Users can always update their own profile
-      if (request.auth.uid == targetUserId) {
-        return true;
-      }
-      
-      // Super admins can manage anyone
-      if (currentUser.role == 'super_admin') {
-        return true;
-      }
-      
-      // Must be in same organization
-      if (currentUser.organizationId != targetUser.organizationId) {
-        return false;
-      }
-      
-      // Role hierarchy check
-      let roleHierarchy = {
-        'readonly': 1,
-        'agent': 2,
-        'manager': 3,
-        'org_admin': 4,
-        'super_admin': 5
-      };
-      
-      return roleHierarchy[currentUser.role] > roleHierarchy[targetUser.role];
-    }
-
-    // Users collection
+    // Users collection - simplified rules
     match /users/{userId} {
-      // Read: Users can read their own profile, managers can read subordinates
-      allow read: if isAuthenticated() && isActive() && (
-        request.auth.uid == userId ||
-        isManagerOrAbove()
-      );
+      // Users can read their own profile, authenticated users can read others
+      allow read: if isAuthenticated();
       
-      // Create: Only super admins or org admins can create users
-      allow create: if isAuthenticated() && isActive() && (
-        isSuperAdmin() || 
-        (isOrgAdmin() && belongsToSameOrg(resource.data.organizationId))
-      );
+      // Users can create/update their own profile
+      allow create, update: if isAuthenticated() && isOwner(userId);
       
-      // Update: Users can update own profile, managers can update subordinates
-      allow update: if isAuthenticated() && isActive() && canManageUser(userId) && (
-        // Prevent role escalation beyond current user's level
-        !('role' in request.resource.data) ||
-        request.resource.data.role == resource.data.role ||
-        (isSuperAdmin()) ||
-        (isOrgAdmin() && request.resource.data.role in ['agent', 'manager', 'readonly'])
-      );
-      
-      // Delete: Only super admins can delete users
-      allow delete: if isAuthenticated() && isActive() && isSuperAdmin();
+      // No deletes for now
+      allow delete: if false;
     }
 
     // Organizations collection
     match /organizations/{orgId} {
-      // Read: Users can read their own organization, super admins can read all
-      allow read: if isAuthenticated() && isActive() && belongsToSameOrg(orgId);
+      // All authenticated users can read organizations
+      allow read: if isAuthenticated();
       
-      // Create: Only super admins can create organizations
-      allow create: if isAuthenticated() && isActive() && isSuperAdmin();
+      // Only authenticated users can create/update organizations
+      allow create, update: if isAuthenticated();
       
-      // Update: Org admins can update their organization, super admins can update any
-      allow update: if isAuthenticated() && isActive() && (
-        isSuperAdmin() || 
-        (isOrgAdmin() && belongsToSameOrg(orgId))
-      );
-      
-      // Delete: Only super admins can delete organizations
-      allow delete: if isAuthenticated() && isActive() && isSuperAdmin();
+      // No deletes
+      allow delete: if false;
     }
 
     // User invitations
     match /invitations/{invitationId} {
-      // Read: Org admins and above can read invitations for their organization
-      allow read: if isAuthenticated() && isActive() && (
-        isSuperAdmin() ||
-        (isManagerOrAbove() && belongsToSameOrg(resource.data.organizationId))
-      );
-      
-      // Create: Org admins and above can create invitations
-      allow create: if isAuthenticated() && isActive() && (
-        isSuperAdmin() ||
-        (isOrgAdmin() && belongsToSameOrg(request.resource.data.organizationId))
-      );
-      
-      // Update: Can update invitation status, or invited user can accept
-      allow update: if isAuthenticated() && (
-        (isActive() && isSuperAdmin()) ||
-        (isActive() && isOrgAdmin() && belongsToSameOrg(resource.data.organizationId)) ||
-        (!isActive() && resource.data.email == request.auth.token.email)
-      );
-      
-      // Delete: Org admins and above can delete invitations
-      allow delete: if isAuthenticated() && isActive() && (
-        isSuperAdmin() ||
-        (isOrgAdmin() && belongsToSameOrg(resource.data.organizationId))
-      );
+      // Authenticated users can read/write invitations
+      allow read, write: if isAuthenticated();
     }
 
-    // Audit logs - read-only for managers and above
+    // Audit logs - read-only
     match /audit_logs/{logId} {
-      allow read: if isAuthenticated() && isActive() && (
-        isSuperAdmin() ||
-        (isManagerOrAbove() && belongsToSameOrg(resource.data.organizationId))
-      );
-      
-      // Create only - audit logs are append-only
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      
-      // No updates or deletes allowed
       allow update, delete: if false;
     }
 
-    // Settings and configuration
+    // Settings
     match /settings/{settingId} {
-      // Read: All authenticated users can read settings for their organization
-      allow read: if isAuthenticated() && isActive() && (
-        isSuperAdmin() ||
-        belongsToSameOrg(resource.data.organizationId)
-      );
-      
-      // Write: Only org admins and above can modify settings
-      allow write: if isAuthenticated() && isActive() && (
-        isSuperAdmin() ||
-        (isOrgAdmin() && belongsToSameOrg(request.resource.data.organizationId))
-      );
+      allow read, write: if isAuthenticated();
     }
 
-    // Tickets and analytics data (organization-scoped)
+    // Tickets and analytics (if used)
     match /tickets/{ticketId} {
-      allow read, write: if isAuthenticated() && isActive() && (
-        isSuperAdmin() ||
-        belongsToSameOrg(resource.data.organizationId)
-      );
+      allow read, write: if isAuthenticated();
     }
 
     match /analytics/{analyticsId} {
-      allow read: if isAuthenticated() && isActive() && (
-        isSuperAdmin() ||
-        belongsToSameOrg(resource.data.organizationId)
-      );
-      
-      allow write: if isAuthenticated() && isActive() && (
-        isSuperAdmin() ||
-        (isManagerOrAbove() && belongsToSameOrg(request.resource.data.organizationId))
-      );
+      allow read, write: if isAuthenticated();
     }
 
-    // Legacy job processing (keep for backward compatibility)
+    // Legacy collections (keep for compatibility)
     match /jobs/{jobId} {
-      allow create: if request.auth != null;
-      allow read: if request.auth != null;
+      allow create, read: if isAuthenticated();
       allow update: if false; 
     }
 
     match /jobs/{jobId}/chunks/{chunkId} {
-      allow read: if request.auth != null;
+      allow read: if isAuthenticated();
       allow write: if false;
     }
 

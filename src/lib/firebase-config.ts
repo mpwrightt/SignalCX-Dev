@@ -1,8 +1,8 @@
 
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator, enableNetwork, disableNetwork } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -16,12 +16,44 @@ const firebaseConfig = {
 
 // Initialize Firebase for client-side usage
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+
+// Use test database for development
+const databaseId = process.env.NODE_ENV === 'development' ? 'signalcx-test' : '(default)';
+const db = getFirestore(app, databaseId);
 const auth = getAuth(app);
 
 // Configure Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
+
+// Enable offline persistence and handle network issues
+let isNetworkEnabled = true;
+
+export const enableFirebaseNetwork = async () => {
+  if (!isNetworkEnabled) {
+    try {
+      await enableNetwork(db);
+      isNetworkEnabled = true;
+      console.log('Firebase network enabled');
+    } catch (error) {
+      console.error('Failed to enable Firebase network:', error);
+    }
+  }
+};
+
+export const disableFirebaseNetwork = async () => {
+  if (isNetworkEnabled) {
+    try {
+      await disableNetwork(db);
+      isNetworkEnabled = false;
+      console.log('Firebase network disabled');
+    } catch (error) {
+      console.error('Failed to disable Firebase network:', error);
+    }
+  }
+};
+
+export const isFirebaseOnline = () => isNetworkEnabled;
 
 export { app, db, auth, googleProvider };

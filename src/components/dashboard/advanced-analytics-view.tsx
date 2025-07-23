@@ -2194,7 +2194,7 @@ export const AdvancedAnalyticsView = ({
                   <div className="text-center py-6 text-muted-foreground">
                     <Activity className="h-8 w-8 mx-auto mb-3 text-muted-foreground/50" />
                     <p>No performance forecasts available</p>
-                    {sessionMode === 'live' ? (
+                    {sessionMode === 'enterprise' ? (
                       <div className="mt-4">
                         <p className="text-sm">Run the main AI analysis to generate performance forecasts</p>
                         {(!tickets || tickets.length === 0) && (

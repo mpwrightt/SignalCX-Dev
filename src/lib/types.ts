@@ -177,7 +177,9 @@ export type UserInvitation = {
   email: string;
   role: UserRole;
   organizationId: string;
+  organizationName?: string;
   invitedBy: string;
+  inviterName?: string;
   invitedAt: string;
   expiresAt: string;
   status: 'pending' | 'accepted' | 'expired' | 'revoked';

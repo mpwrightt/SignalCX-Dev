@@ -1,15 +1,5 @@
 
 {
-  "indexes": [
-    {
-      "collectionGroup": "chunks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "createdAt",
-          "order": "ASCENDING"
-        }
-      ]
-    }
-  ]
+  "indexes": [],
+  "fieldOverrides": []
 }
