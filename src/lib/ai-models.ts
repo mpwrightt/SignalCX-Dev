@@ -1,4 +1,6 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { ChatAnthropic } from '@langchain/anthropic';
+import { ChatOpenAI } from '@langchain/openai';
 
 export interface AIModelConfig {
   provider: 'google' | 'anthropic' | 'openai';
@@ -29,7 +31,7 @@ export const MODEL_CONFIGS = {
   },
   'gemini-2.0-flash': {
     provider: 'google' as const,
-    modelName: 'gemini-2.0-flash-exp',
+    modelName: 'gemini-1.5-flash',
     apiKey: process.env.GOOGLE_API_KEY || '',
     temperature: 0.7,
   },
@@ -90,11 +92,19 @@ export function createModel(config: AIModelConfig): any {
         maxOutputTokens: config.maxTokens,
       });
     case 'anthropic':
-      // TODO: Implement Anthropic model creation when needed
-      throw new Error('Anthropic models not yet implemented');
+      return new ChatAnthropic({
+        model: config.modelName,
+        apiKey: config.apiKey,
+        temperature: config.temperature,
+        maxTokens: config.maxTokens,
+      });
     case 'openai':
-      // TODO: Implement OpenAI model creation when needed  
-      throw new Error('OpenAI models not yet implemented');
+      return new ChatOpenAI({
+        model: config.modelName,
+        apiKey: config.apiKey,
+        temperature: config.temperature,
+        maxTokens: config.maxTokens,
+      });
     default:
       throw new Error(`Unsupported model provider: ${config.provider}`);
   }

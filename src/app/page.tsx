@@ -578,6 +578,165 @@ export default function DashboardPage() {
     }
   };
 
+  const handleRunMultiAgentAnalysis = async () => {
+    setIsAnalyzing(true);
+    setAnalysisProgress(0);
+
+    toast({
+      title: "Multi-Agent Analysis Started",
+      description: "Running ALL AI flows with Claude, GPT-4o, and Gemini models. Check Diagnostics for real-time progress.",
+    });
+
+    // Clear diagnostic buffer before starting
+    try {
+      await fetch('/api/diagnostic-buffer', { method: 'DELETE' });
+    } catch (e) {
+      console.warn('Could not clear diagnostic buffer:', e);
+    }
+
+    // Start polling diagnostic buffer for real-time updates
+    const pollDiagnostics = async () => {
+      try {
+        const response = await fetch('/api/diagnostic-buffer');
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Log each new diagnostic entry to the frontend
+          data.entries.forEach(entry => {
+            logEvent(entry.type, entry.flow, entry.data, {
+              agent: entry.agent,
+              model: entry.model,
+              duration: entry.duration
+            });
+          });
+        }
+      } catch (e) {
+        console.warn('Diagnostic polling failed:', e);
+      }
+    };
+
+    // Poll every 500ms for real-time updates
+    const pollInterval = setInterval(pollDiagnostics, 500);
+
+    try {
+      // Log the start of comprehensive multi-agent analysis
+      logEvent('sent', 'comprehensive-multi-agent-analysis', {
+        ticketCount: tickets.length,
+        flowsToRun: ['batchAnalyzeTickets', 'getPerformanceForecasts', 'getBurnoutIndicators', 'getKnowledgeGaps', 'getSlaPrediction', 'getHolisticAnalysis', 'batchIdentifyTicketRisks', 'clusterTickets', 'summarizeTrends', 'getCoachingInsights'],
+        timestamp: new Date().toISOString()
+      }, {
+        agent: 'comprehensive-system',
+        model: 'claude+gpt4o+gemini'
+      });
+
+      setAnalysisProgress(10);
+
+      const response = await fetch('/api/multi-agent-diagnostic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tickets,
+          userRequest: 'Run comprehensive analysis with ALL AI flows',
+          analysisGoal: 'complete system analysis including advanced analytics',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Comprehensive multi-agent analysis failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setAnalysisProgress(90);
+
+      // Final poll to get any remaining diagnostic entries
+      await pollDiagnostics();
+
+      // Populate Advanced Analytics data from Multi-Agent results
+      if (result.results) {
+        // Performance Forecasts
+        if (result.results.getPerformanceForecasts?.result?.forecasts) {
+          setPerformanceForecasts(result.results.getPerformanceForecasts.result.forecasts);
+          setLocalCachedData('signalcx-performance-forecasts-cache', result.results.getPerformanceForecasts.result.forecasts);
+        }
+
+        // Coaching Insights
+        if (result.results.getCoachingInsights?.result?.insights) {
+          setCoachingInsights(result.results.getCoachingInsights.result.insights);
+        }
+
+        // Ticket Clusters
+        if (result.results.clusterTickets?.result?.clusters) {
+          setTicketClusters(result.results.clusterTickets.result.clusters);
+        }
+
+        // Combine all predictive analysis results
+        const predictiveAnalysis: PredictiveAnalysisOutput = {
+          // From SLA Prediction
+          ...(result.results.getSlaPrediction?.result || {}),
+          // From Holistic Analysis
+          ...(result.results.getHolisticAnalysis?.result || {}),
+          // From Risk Analysis
+          atRiskTickets: result.results.batchIdentifyTicketRisks?.result?.atRiskTickets || [],
+          predictedSlaBreaches: result.results.getSlaPrediction?.result?.predictedSlaBreaches || [],
+          documentationOpportunities: result.results.batchIdentifyTicketRisks?.result?.documentationOpportunities || [],
+          // From Trends
+          trends: result.results.summarizeTrends?.result?.trends || [],
+          // From Burnout Indicators
+          burnoutIndicators: result.results.getBurnoutIndicators?.result?.burnoutIndicators || [],
+          // From Knowledge Gaps  
+          knowledgeGaps: result.results.getKnowledgeGaps?.result?.knowledgeGaps || []
+        };
+
+        setPrediction(predictiveAnalysis);
+        setLocalCachedData(PREDICTIVE_CACHE_KEY, predictiveAnalysis);
+      }
+
+      // Log the comprehensive result
+      logEvent('received', 'comprehensive-multi-agent-analysis', {
+        summary: result.summary,
+        flowsCompleted: Object.keys(result.results || {}),
+        totalDuration: result.summary?.totalDuration,
+        modelUsage: result.diagnostic?.modelUsage,
+        advancedAnalyticsPopulated: true
+      }, {
+        agent: 'comprehensive-system',
+        model: 'claude+gpt4o+gemini',
+        duration: result.summary?.totalDuration
+      });
+
+      setIsAnalyzed(true);
+      setIsDeepAnalyzed(true);
+
+      toast({
+        title: "Comprehensive Multi-Agent Analysis Complete",
+        description: `${result.summary?.totalFlows || 0} AI flows completed using ${Object.keys(result.diagnostic?.modelUsage || {}).length} different models in ${Math.round((result.summary?.totalDuration || 0) / 1000)}s. Advanced Analytics page has been populated with results.`,
+        duration: 10000,
+      });
+
+    } catch (error) {
+      console.error('[Comprehensive Multi-Agent Analysis] Error:', error);
+      logEvent('error', 'comprehensive-multi-agent-analysis', error, {
+        agent: 'comprehensive-system',
+        model: 'claude+gpt4o+gemini'
+      });
+
+      toast({
+        title: "Comprehensive Analysis Failed",
+        description: "An error occurred during comprehensive multi-agent processing. Check Diagnostics for details.",
+        variant: "destructive",
+        duration: 8000,
+      });
+    } finally {
+      // Stop polling
+      clearInterval(pollInterval);
+      
+      setAnalysisProgress(100);
+      setIsAnalyzing(false);
+    }
+  };
+
   const dateFilteredTickets = React.useMemo(() => {
     return tickets.filter((ticket) => {
       if (!dateRange || !dateRange.from) {
@@ -1713,14 +1872,29 @@ export default function DashboardPage() {
                 </h1>
                 <div className="flex w-full md:w-auto md:ml-auto items-center gap-2">
                    {sessionMode === 'demo' && (
-                    <Button onClick={handleRunCombinedAnalysis} disabled={loading || isAnalyzing}>
+                    <>
+                      <Button onClick={handleRunCombinedAnalysis} disabled={loading || isAnalyzing}>
+                          {isAnalyzing ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                              <Sparkles className="mr-2 h-4 w-4" />
+                          )}
+                          {isAnalyzed ? 'Refresh AI Analysis' : 'Run AI Analysis'}
+                      </Button>
+                      <Button 
+                        onClick={handleRunMultiAgentAnalysis} 
+                        disabled={loading || isAnalyzing}
+                        variant="secondary"
+                        className="border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700"
+                      >
                         {isAnalyzing ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
-                            <Sparkles className="mr-2 h-4 w-4" />
+                            <BrainCircuit className="mr-2 h-4 w-4" />
                         )}
-                        {isAnalyzed ? 'Refresh AI Analysis' : 'Run AI Analysis'}
-                    </Button>
+                        Multi-Agent Analysis
+                      </Button>
+                    </>
                    )}
                    {isAnalyzing && (
                      <div className="flex items-center gap-2 w-full max-w-[300px]">
@@ -1818,6 +1992,7 @@ export default function DashboardPage() {
                   tickets={dashboardFilteredTickets} 
                   historicalVolume={ticketVolumeData}
                   forecastDays={settings.forecastDays}
+                  prediction={prediction}
                 />
               ) : mode === 'team-management' ? (
                 <TeamManagement />

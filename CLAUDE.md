@@ -103,6 +103,7 @@ Required in `.env`:
 - `NEXT_PUBLIC_BOOTSTRAP_ADMIN_EMAIL` - Email to automatically make org_admin on first login
 
 ## Production Features
+refactor files once code reaches 200-300 lines
 
 ### Team Management System
 - **Role-Based Access Control**: 5 role hierarchy (readonly → agent → manager → org_admin → super_admin)

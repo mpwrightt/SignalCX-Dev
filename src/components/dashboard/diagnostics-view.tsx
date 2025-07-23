@@ -24,8 +24,15 @@ const LogList = ({ logs }: { logs: LogEntry[] }) => {
         <AccordionItem value={`log-${log.id}`} key={log.id}>
           <AccordionTrigger>
             <div className="flex justify-between items-center w-full pr-4">
+              <div className="flex flex-col items-start">
                 <span className="font-mono text-sm">{log.flow}</span>
-                <span className="text-xs text-muted-foreground">{log.timestamp.toLocaleTimeString()}</span>
+                <div className="flex gap-2 text-xs text-muted-foreground">
+                  {log.agent && <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Agent: {log.agent}</span>}
+                  {log.model && <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded">Model: {log.model}</span>}
+                  {log.duration && <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded">{log.duration}ms</span>}
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground">{log.timestamp.toLocaleTimeString()}</span>
             </div>
           </AccordionTrigger>
           <AccordionContent>

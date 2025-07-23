@@ -734,6 +734,97 @@ export const AdvancedAnalyticsView = ({
     }
   }, [tickets, cacheKey, logEvent, toast, cacheInitialized, analysisMode, settings.enableAgenticMode, settingsLoaded]);
 
+  const runMultiAgentAnalysis = React.useCallback(async () => {
+    console.log('[AdvancedAnalyticsView] Starting Multi-Agent Analysis with different AI models...');
+    
+    if (tickets.length === 0) {
+      console.warn('[AdvancedAnalyticsView] No tickets available for multi-agent analysis');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    const startTime = Date.now();
+    
+    try {
+      // Log the start with diagnostic info
+      logEvent('sent', 'multi-agent-analysis', {
+        ticketCount: tickets.length,
+        analysisGoal: 'comprehensive multi-agent analysis',
+        timestamp: new Date().toISOString()
+      }, {
+        agent: 'multi-agent-system',
+        model: 'multiple-models'
+      });
+      
+      const response = await fetch('/api/multi-agent-diagnostic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tickets,
+          userRequest: 'Perform comprehensive analysis using multiple AI agents',
+          analysisGoal: 'comprehensive analysis',
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Multi-agent analysis failed: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      const duration = Date.now() - startTime;
+      
+      // Log individual agent results with model information
+      if (result.result) {
+        const agents = ['discovery', 'performance', 'risk', 'coaching', 'synthesis'];
+        agents.forEach(agent => {
+          if (result.result[agent]) {
+            const modelUsed = result.diagnostic?.modelUsage?.[agent] || 'unknown';
+            logEvent('received', `${agent}-agent`, result.result[agent], {
+              agent,
+              model: modelUsed,
+              duration: Math.round(duration / agents.length) // Approximate duration per agent
+            });
+          }
+        });
+      }
+      
+      // Log the complete result
+      logEvent('received', 'multi-agent-analysis', result, {
+        agent: 'multi-agent-system',
+        model: 'multiple-models',
+        duration
+      });
+      
+      toast({
+        title: "Multi-Agent Analysis Complete",
+        description: `Analysis completed using ${Object.keys(result.diagnostic?.modelUsage || {}).length} different AI models in ${Math.round(duration / 1000)}s`,
+        duration: 5000,
+      });
+      
+      console.log('[AdvancedAnalyticsView] Multi-agent analysis completed:', result.diagnostic);
+      
+    } catch (err) {
+      console.error('[AdvancedAnalyticsView] Error in multi-agent analysis:', err);
+      logEvent('error', 'multi-agent-analysis', err, {
+        agent: 'multi-agent-system',
+        model: 'multiple-models'
+      });
+      
+      setError("Multi-agent analysis failed. Please try again.");
+      toast({
+        title: "Multi-Agent Analysis Failed",
+        description: "An error occurred during multi-agent processing. Please try again.",
+        duration: 5000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [tickets, logEvent, toast]);
+
   const runAgentSpecificAnalysis = React.useCallback(async (agentName: string, analysisType: 'performance' | 'burnout' | 'knowledge') => {
     // Set loading state for this specific agent
     setAgentLoadingStates(prev => new Map(prev).set(`${agentName}-${analysisType}`, true));
@@ -1334,35 +1425,45 @@ export const AdvancedAnalyticsView = ({
     );
   }
 
-  // Show start button if no data and not loading
+  // Check for data from multiple sources
   const hasPerformanceData = performanceForecasts.length > 0;
   const hasBurnoutData = burnoutIndicators.length > 0;
   const hasKnowledgeData = knowledgeGaps.length > 0;
   const hasSlaData = !!slaPrediction;
   const hasHolisticData = !!holisticAnalysis;
-  
   const hasAgenticData = !!agentAnalysisResult;
-  const hasAnyData = hasPerformanceData || hasBurnoutData || hasKnowledgeData || hasSlaData || hasHolisticData || hasAgenticData;
   
-  console.log('[AdvancedAnalyticsView] 🔍 Render state:', { 
-    hasAnyData, 
-    loading, 
-    cacheInitialized, 
-    analysisMode, 
-    hasAgenticData,
-    agentAnalysisResultExists: !!agentAnalysisResult,
-    enableAgenticMode: settings.enableAgenticMode,
-    settingsLoaded,
-    showingPlaceholder: analysisMode === 'agentic' && !agentAnalysisResult && !loading,
-    showingResults: analysisMode === 'agentic' && agentAnalysisResult,
-    toggleChecked: analysisMode === 'agentic',
-    actualSetting: settings.enableAgenticMode,
-    agentAnalysisResultKeys: agentAnalysisResult ? Object.keys(agentAnalysisResult) : null,
-    cacheKey
-  });
+  // Also check prediction prop data (from Multi-Agent analysis)
+  const hasPredictionData = !!prediction && (
+    prediction.atRiskTickets?.length > 0 ||
+    prediction.predictedSlaBreaches?.length > 0 ||
+    prediction.burnoutIndicators?.length > 0 ||
+    prediction.knowledgeGaps?.length > 0 ||
+    prediction.trends?.length > 0 ||
+    prediction.documentationOpportunities?.length > 0
+  );
   
-  // Show loading skeleton if cache not yet initialized
-  if (!cacheInitialized) {
+  const hasAnyData = hasPerformanceData || hasBurnoutData || hasKnowledgeData || hasSlaData || hasHolisticData || hasAgenticData || hasPredictionData;
+  
+  console.log('[AdvancedAnalyticsView] 🔍 Render state:');
+  console.log('  hasAnyData:', hasAnyData);
+  console.log('  hasPerformanceData:', hasPerformanceData, 'count:', performanceForecasts.length);
+  console.log('  hasBurnoutData:', hasBurnoutData, 'count:', burnoutIndicators.length);
+  console.log('  hasKnowledgeData:', hasKnowledgeData, 'count:', knowledgeGaps.length);
+  console.log('  hasSlaData:', hasSlaData, 'exists:', !!slaPrediction);
+  console.log('  hasHolisticData:', hasHolisticData, 'exists:', !!holisticAnalysis);
+  console.log('  hasAgenticData:', hasAgenticData, 'exists:', !!agentAnalysisResult);
+  console.log('  hasPredictionData:', hasPredictionData, 'predictionExists:', !!prediction);
+  if (prediction) {
+    console.log('  prediction keys:', Object.keys(prediction));
+    console.log('  prediction.atRiskTickets:', prediction.atRiskTickets?.length || 0);
+    console.log('  prediction.burnoutIndicators:', prediction.burnoutIndicators?.length || 0);
+    console.log('  prediction.knowledgeGaps:', prediction.knowledgeGaps?.length || 0);
+  }
+  console.log('  loading:', loading, 'cacheInitialized:', cacheInitialized);
+  
+  // Show loading skeleton if cache not yet initialized AND no prediction data provided
+  if (!cacheInitialized && !prediction) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1383,56 +1484,7 @@ export const AdvancedAnalyticsView = ({
     );
   }
 
-  if (!hasAnyData && !loading && cacheInitialized) {
-    return (
-      <div className="flex items-center justify-center min-h-[300px]">
-        <Card className="w-full max-w-md mx-auto p-6 flex flex-col items-center gap-4">
-          <CardHeader className="flex flex-col items-center">
-            <Brain className="h-8 w-8 text-primary mb-2" />
-            <CardTitle className="text-lg font-bold">Advanced Analytics</CardTitle>
-            <CardDescription className="text-center text-muted-foreground">
-              Generate AI-powered insights including performance forecasts, burnout detection, and knowledge gap analysis.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="w-full flex flex-col items-center">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-sm font-medium">Standard</span>
-              <Switch
-                checked={analysisMode === 'agentic'}
-                onCheckedChange={(checked) => {
-                  console.log('[AdvancedAnalyticsView] 🎯 Start screen toggle clicked:', {
-                    checked,
-                    currentMode: analysisMode,
-                    targetMode: checked ? 'agentic' : 'standard'
-                  });
-                  setAnalysisMode(checked ? 'agentic' : 'standard');
-                }}
-                disabled={loading}
-              />
-              <span className="text-sm font-medium">AI Analyst</span>
-            </div>
-            <Button 
-              onClick={() => {
-                console.log('[AdvancedAnalyticsView] Button clicked, starting analysis...');
-                runAIAnalysis();
-              }} 
-              className="w-full"
-              size="lg"
-            >
-              <Brain className="h-4 w-4 mr-2" />
-              {analysisMode === 'agentic' ? 'Run AI Analyst' : 'Run AI Analysis'}
-            </Button>
-            <div className="mt-4 text-xs text-muted-foreground text-center">
-              {analysisMode === 'agentic' 
-                ? `AI Analyst will intelligently analyze ${tickets.length} tickets using the most appropriate tools`
-                : `This will analyze ${tickets.length} tickets and generate comprehensive insights`
-              }
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Removed empty state screen - Advanced Analytics will always show available data
 
   return (
     <div className="space-y-4 md:space-y-6">

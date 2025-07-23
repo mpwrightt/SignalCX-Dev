@@ -8,12 +8,15 @@ export type LogEntry = {
   timestamp: Date;
   type: 'sent' | 'received' | 'error';
   flow: string;
+  model?: string;
+  agent?: string;
+  duration?: number;
   data: any;
 };
 
 type DiagnosticsContextType = {
   logs: LogEntry[];
-  logEvent: (type: LogEntry['type'], flow: string, data: any) => void;
+  logEvent: (type: LogEntry['type'], flow: string, data: any, options?: { model?: string; agent?: string; duration?: number }) => void;
   clearLogs: () => void;
 };
 
@@ -24,12 +27,15 @@ let logIdCounter = 0;
 export function DiagnosticsProvider({ children }: { children: React.ReactNode }) {
   const [logs, setLogs] = React.useState<LogEntry[]>([]);
 
-  const logEvent = React.useCallback((type: LogEntry['type'], flow: string, data: any) => {
+  const logEvent = React.useCallback((type: LogEntry['type'], flow: string, data: any, options?: { model?: string; agent?: string; duration?: number }) => {
     const newLog: LogEntry = {
       id: logIdCounter++,
       timestamp: new Date(),
       type,
       flow,
+      model: options?.model,
+      agent: options?.agent,
+      duration: options?.duration,
       data: data instanceof Error ? { message: data.message, stack: data.stack } : data,
     };
     setLogs(prevLogs => [newLog, ...prevLogs].slice(0, 100)); // Keep last 100 logs
