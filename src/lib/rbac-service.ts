@@ -1,4 +1,5 @@
 import type { UserRole, Permission, AuthenticatedUser } from './types';
+import { DataClassification, canAccessClassification } from './data-classification';
 
 // Define role hierarchy and default permissions
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
@@ -9,7 +10,8 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'ai.read', 'ai.write',
     'settings.read', 'settings.write',
     'audit.read',
-    'org.read', 'org.write'
+    'org.read', 'org.write',
+    'data.classify', 'data.declassify', 'data.access_restricted', 'data.access_confidential'
   ],
   org_admin: [
     'users.read', 'users.write', 'users.delete',
@@ -18,14 +20,16 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'ai.read', 'ai.write',
     'settings.read', 'settings.write',
     'audit.read',
-    'org.read'
+    'org.read',
+    'data.classify', 'data.access_restricted', 'data.access_confidential'
   ],
   manager: [
     'users.read',
     'tickets.read', 'tickets.write',
     'analytics.read', 'analytics.write',
     'ai.read', 'ai.write',
-    'settings.read'
+    'settings.read',
+    'data.access_confidential'
   ],
   agent: [
     'tickets.read', 'tickets.write',
@@ -134,7 +138,7 @@ export function hasOrganizationAccess(user: AuthenticatedUser | null, organizati
  */
 export function getEffectivePermissions(role: UserRole, customPermissions: Permission[] = []): Permission[] {
   const rolePermissions = getRolePermissions(role);
-  const allPermissions = [...new Set([...rolePermissions, ...customPermissions])];
+  const allPermissions = Array.from(new Set([...rolePermissions, ...customPermissions]));
   
   return allPermissions;
 }
@@ -195,5 +199,141 @@ export function requirePermissions(permissions: Permission[], requireAll = true)
     return requireAll 
       ? hasAllPermissions(user, permissions)
       : hasAnyPermission(user, permissions);
+  };
+}
+
+/**
+ * Check if user can access data with specific classification
+ */
+export function hasDataClassificationAccess(
+  user: AuthenticatedUser | null,
+  classification: DataClassification,
+  organizationId?: string
+): boolean {
+  return canAccessClassification(user, classification, organizationId);
+}
+
+/**
+ * Check if user can classify data
+ */
+export function canClassifyData(user: AuthenticatedUser | null): boolean {
+  return hasPermission(user, 'data.classify');
+}
+
+/**
+ * Check if user can declassify data
+ */
+export function canDeclassifyData(user: AuthenticatedUser | null): boolean {
+  return hasPermission(user, 'data.declassify');
+}
+
+/**
+ * Check if user can access restricted data
+ */
+export function canAccessRestrictedData(user: AuthenticatedUser | null): boolean {
+  return hasPermission(user, 'data.access_restricted');
+}
+
+/**
+ * Check if user can access confidential data
+ */
+export function canAccessConfidentialData(user: AuthenticatedUser | null): boolean {
+  return hasPermission(user, 'data.access_confidential');
+}
+
+/**
+ * Filter data based on classification and user permissions
+ */
+export function filterByClassification<T extends { classification?: { level: DataClassification }; organizationId?: string }>(
+  user: AuthenticatedUser | null,
+  data: T[]
+): T[] {
+  if (!user || !user.isActive) {
+    return [];
+  }
+
+  return data.filter(item => {
+    // If no classification, default to INTERNAL level
+    const classification = item.classification?.level || DataClassification.INTERNAL;
+    return hasDataClassificationAccess(user, classification, item.organizationId);
+  });
+}
+
+/**
+ * Get maximum classification level a user can access
+ */
+export function getMaxAccessibleClassification(user: AuthenticatedUser | null): DataClassification {
+  if (!user || !user.isActive) {
+    return DataClassification.PUBLIC;
+  }
+
+  if (hasPermission(user, 'data.access_restricted')) {
+    return DataClassification.RESTRICTED;
+  }
+  
+  if (hasPermission(user, 'data.access_confidential')) {
+    return DataClassification.CONFIDENTIAL;
+  }
+  
+  if (hasPermission(user, 'tickets.read')) {
+    return DataClassification.INTERNAL;
+  }
+  
+  return DataClassification.PUBLIC;
+}
+
+/**
+ * Validate user access to specific classified data
+ */
+export function validateClassifiedDataAccess(
+  user: AuthenticatedUser | null,
+  classification: DataClassification,
+  organizationId?: string,
+  requiredPermissions?: Permission[]
+): {
+  allowed: boolean;
+  reason?: string;
+  requiredTraining?: string[];
+} {
+  if (!user || !user.isActive) {
+    return {
+      allowed: false,
+      reason: 'User not authenticated or inactive'
+    };
+  }
+
+  // Check classification access
+  if (!hasDataClassificationAccess(user, classification, organizationId)) {
+    return {
+      allowed: false,
+      reason: `Insufficient permissions for ${classification} data`
+    };
+  }
+
+  // Check additional permissions if required
+  if (requiredPermissions && !hasAllPermissions(user, requiredPermissions)) {
+    return {
+      allowed: false,
+      reason: `Missing required permissions: ${requiredPermissions.join(', ')}`
+    };
+  }
+
+  // Check organization access
+  if (organizationId && !hasOrganizationAccess(user, organizationId)) {
+    return {
+      allowed: false,
+      reason: 'Access denied: different organization'
+    };
+  }
+
+  // Check for training requirements (placeholder for future implementation)
+  const requiredTraining: string[] = [];
+  if (classification === DataClassification.RESTRICTED) {
+    requiredTraining.push('PII Handling Training');
+  }
+
+  return {
+    allowed: true,
+    requiredTraining: requiredTraining.length > 0 ? requiredTraining : undefined
   };
 }

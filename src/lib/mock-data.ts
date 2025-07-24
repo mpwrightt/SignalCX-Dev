@@ -145,6 +145,83 @@ export function generateMockSlaPrediction(tickets: Ticket[]) {
   };
 }
 
+export function generateMockPerformanceForecasts(tickets: Ticket[]) {
+  // Group tickets by agent for agent-specific forecasts
+  const agentMap = new Map();
+  tickets.forEach(t => {
+    if (t.assignee) {
+      if (!agentMap.has(t.assignee)) agentMap.set(t.assignee, []);
+      agentMap.get(t.assignee).push(t);
+    }
+  });
+
+  const riskFactors = [
+    'High ticket volume expected',
+    'Complex technical issues',
+    'Seasonal demand increase',
+    'New product launch',
+    'System maintenance window',
+    'Team member on leave',
+    'Training period',
+    'Process changes',
+  ];
+
+  const recommendations = [
+    'Increase staffing for peak hours',
+    'Provide additional training',
+    'Implement automation tools',
+    'Review workload distribution',
+    'Optimize response templates',
+    'Cross-train team members',
+    'Improve knowledge base',
+    'Enhance escalation procedures',
+  ];
+
+  return Array.from(agentMap.entries()).map(([agentName, agentTickets]) => {
+    const confidence = Math.random() * 0.4 + 0.6; // 60-100% confidence
+    const predictedTicketsNextWeek = Math.floor(agentTickets.length * (0.8 + Math.random() * 0.4)); // ±20% variation
+    const predictedCsatNextWeek = Math.random() * 0.3 + 0.7; // 70-100% CSAT
+
+    return {
+      agentName: String(agentName),
+      confidence: Math.round(confidence * 100) / 100,
+      predictedTicketsNextWeek,
+      predictedCsatNextWeek: Math.round(predictedCsatNextWeek * 100) / 100,
+      riskFactors: sampleSize(riskFactors, 2),
+      recommendations: sampleSize(recommendations, 2),
+      recentTickets: agentTickets.slice(-5),
+    };
+  });
+}
+
+export function generateMockHolisticAnalysis(tickets: Ticket[]) {
+  const totalTickets = tickets.length;
+  const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'pending').length;
+  const avgResolutionTime = tickets.reduce((sum, t) => {
+    if (t.solved_at && t.created_at) {
+      const created = new Date(t.created_at);
+      const solved = new Date(t.solved_at);
+      return sum + (solved.getTime() - created.getTime()) / (1000 * 60 * 60); // hours
+    }
+    return sum;
+  }, 0) / Math.max(1, tickets.filter(t => t.solved_at).length);
+
+  const overallAnalysis = `Analysis of ${totalTickets} tickets shows ${openTickets} currently open. Average resolution time is ${Math.round(avgResolutionTime)} hours. System performance is ${avgResolutionTime < 24 ? 'good' : 'needs improvement'}.`;
+
+  const agentTriageSummary = `Team workload is ${openTickets > totalTickets * 0.3 ? 'high' : 'manageable'}. Recommend ${openTickets > totalTickets * 0.3 ? 'increasing staffing' : 'maintaining current levels'}.`;
+
+  const confidenceScore = Math.random() * 0.3 + 0.7; // 70-100% confidence
+
+  return {
+    overallAnalysis,
+    agentTriageSummary,
+    confidenceScore: Math.round(confidenceScore * 100) / 100,
+    totalTickets,
+    openTickets,
+    avgResolutionTime: Math.round(avgResolutionTime),
+  };
+}
+
 export const mockAgents = [
   "John Carter", "Diana Prince", "Bruce Wayne", "Clark Kent", "Barry Allen", 
   "Hal Jordan", "Arthur Curry", "Jessica Cruz", "Wally West", "Selina Kyle"

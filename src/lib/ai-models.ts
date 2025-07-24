@@ -68,6 +68,10 @@ export const AGENT_MODEL_SELECTIONS: Record<string, AgentModelSelection> = {
     primary: MODEL_CONFIGS['claude-3.5-sonnet'], // Will fallback to Google if no Anthropic key
     fallback: MODEL_CONFIGS['gemini-2.0-flash'],
   },
+  sentiment: {
+    primary: MODEL_CONFIGS['gemini-2.0-flash'],
+    fallback: MODEL_CONFIGS['gemini-1.5-flash'],
+  },
   synthesis: {
     primary: MODEL_CONFIGS['gpt-4o'], // Will fallback to Google if no OpenAI key
     fallback: MODEL_CONFIGS['gemini-2.0-flash'],

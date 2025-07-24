@@ -1,4 +1,6 @@
 
+import type { ClassificationMetadata } from './data-classification';
+
 export type DashboardComponentConfig = {
   id: string;
   label: string;
@@ -29,6 +31,9 @@ export type Ticket = {
   }[];
   sla_breached: boolean;
   csat_score?: number; // 1-5
+  // Data classification metadata
+  classification?: ClassificationMetadata;
+  organizationId?: string;
 };
 
 export type TicketAnalysis = {
@@ -51,6 +56,9 @@ export type UserProfile = {
     Neutral: number;
     Negative: number;
   };
+  // Data classification metadata
+  classification?: ClassificationMetadata;
+  organizationId?: string;
 };
 
 export type AgentProfile = {
@@ -69,6 +77,9 @@ export type AgentProfile = {
   // New fields for tier management
   tier: 'Tier 1' | 'Tier 2' | 'Tier 3';
   performanceHistory: WeeklyPerformance[];
+  // Data classification metadata
+  classification?: ClassificationMetadata;
+  organizationId?: string;
 };
 
 // New types for agent performance tracking
@@ -122,7 +133,8 @@ export type Permission =
   | 'ai.read' | 'ai.write'
   | 'settings.read' | 'settings.write'
   | 'audit.read'
-  | 'org.read' | 'org.write';
+  | 'org.read' | 'org.write'
+  | 'data.classify' | 'data.declassify' | 'data.access_restricted' | 'data.access_confidential';
 
 export type AuthenticatedUser = {
   id: string;
@@ -140,6 +152,8 @@ export type AuthenticatedUser = {
   updatedAt: string;
   invitedBy?: string;
   emailVerified: boolean;
+  // Data classification metadata
+  classification?: ClassificationMetadata;
 };
 
 // Organization/Tenant management
@@ -156,6 +170,8 @@ export type Organization = {
   plan: 'free' | 'pro' | 'enterprise';
   maxUsers: number;
   currentUsers: number;
+  // Data classification metadata
+  classification?: ClassificationMetadata;
 };
 
 export type OrganizationSettings = {

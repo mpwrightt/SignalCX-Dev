@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DynamicTool } from 'langchain/tools';
 import { initializeAgentExecutorWithOptions } from 'langchain/agents';
 import { getModelForAgent, PerformanceTracker } from '@/lib/ai-models';
+import { logMultiAgentEvent, logDataAccessEvent, logSecurityEvent } from '@/lib/audit-service';
+import { detectPII } from '@/lib/pii-scrubber';
+import type { AuthenticatedUser } from '@/lib/types';
 // Import Genkit flows
 import { getPerformanceForecasts } from '@/ai/flows/get-performance-forecasts';
 import { getSlaPrediction } from '@/ai/flows/get-sla-prediction';
@@ -30,9 +33,67 @@ function makeTool(name: string, description: string, flow: (input: any) => Promi
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
+  const correlationId = `multi_agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  let user: AuthenticatedUser | null = null;
+  
   try {
     const body = await req.json();
-    const { tickets, userRequest, analysisGoal, ...rest } = body;
+    const { tickets, userRequest, analysisGoal, user: requestUser, ...rest } = body;
+    user = requestUser;
+
+    // Validate request and check for potential security issues
+    if (!tickets || !Array.isArray(tickets)) {
+      await logSecurityEvent(
+        user,
+        'SUSPICIOUS_ACTIVITY_DETECTED',
+        {
+          threatLevel: 'medium',
+          violationType: 'invalid_request_format',
+          resourceAttempted: '/api/multi-agent',
+          additionalContext: { error: 'Invalid or missing tickets array' }
+        },
+        correlationId
+      );
+      return NextResponse.json({ error: 'Invalid request format' }, { status: 400 });
+    }
+
+    // Check for PII in the request data
+    const requestText = JSON.stringify({ userRequest, analysisGoal, tickets: tickets.slice(0, 5) }); // Sample check
+    const piiDetection = detectPII(requestText);
+    
+    // Log data access event for bulk ticket processing
+    await logDataAccessEvent(
+      user,
+      'TICKETS_BULK_ACCESSED',
+      {
+        recordCount: tickets.length,
+        accessPattern: 'batch',
+        containsSensitiveData: piiDetection.hasPII,
+        dataFields: ['subject', 'description', 'conversation', 'assignee', 'requester'],
+        queryParameters: { userRequest, analysisGoal }
+      },
+      correlationId
+    );
+
+    // Log multi-agent processing start
+    await logMultiAgentEvent(
+      user,
+      'MULTI_AGENT_PROCESSING_STARTED',
+      {
+        agentTypes: ['discovery', 'performance', 'risk', 'coaching', 'sentiment', 'synthesis'],
+        ticketCount: tickets.length,
+        modelsUsed: {
+          discovery: 'gemini-2.0-flash',
+          performance: 'gemini-2.0-flash',
+          risk: 'gemini-2.0-flash',
+          coaching: 'claude-3.5-sonnet',
+          sentiment: 'gemini-2.0-flash',
+          synthesis: 'gpt-4o'
+        }
+      },
+      correlationId
+    );
 
     // 1. Discovery Agent - Optimized for fast pattern scanning
     const discoveryTools = [
@@ -61,11 +122,13 @@ export async function POST(req: NextRequest) {
       throw error;
     }
 
-    // 2. Performance, Risk, and Coaching Agents (in parallel)
+    // 2. Performance, Risk, Coaching, and Sentiment Agents (in parallel)
     const performanceTools = [
       makeTool('Performance Forecasts', 'Generate AI-powered performance forecasts for agents', getPerformanceForecasts),
       makeTool('Holistic Analysis', 'Perform comprehensive holistic analysis with trends and predictions', getHolisticAnalysis),
-      makeTool('Batch Analyze', 'Batch analyze tickets for patterns and insights', batchAnalyzeTickets),
+    ];
+    const sentimentTools = [
+      makeTool('Batch Analyze', 'Batch analyze tickets for sentiment and category classification', batchAnalyzeTickets),
     ];
     const riskTools = [
       makeTool('SLA Prediction', 'Predict SLA breach risks and provide recommendations', getSlaPrediction),
@@ -80,6 +143,7 @@ export async function POST(req: NextRequest) {
     const performanceModel = getModelForAgent('performance'); // Gemini 1.5 Pro for complex forecasting
     const riskModel = getModelForAgent('risk'); // Gemini 2.0 Flash for nuanced risk assessment  
     const coachingModel = getModelForAgent('coaching'); // Claude 3.5 Sonnet for human insights
+    const sentimentModel = getModelForAgent('sentiment'); // Gemini 2.0 Flash for sentiment analysis
     const performanceAgent = await initializeAgentExecutorWithOptions(performanceTools, performanceModel, {
       agentType: 'chat-zero-shot-react-description', verbose: true,
     });
@@ -87,6 +151,9 @@ export async function POST(req: NextRequest) {
       agentType: 'chat-zero-shot-react-description', verbose: true,
     });
     const coachingAgent = await initializeAgentExecutorWithOptions(coachingTools, coachingModel, {
+      agentType: 'chat-zero-shot-react-description', verbose: true,
+    });
+    const sentimentAgent = await initializeAgentExecutorWithOptions(sentimentTools, sentimentModel, {
       agentType: 'chat-zero-shot-react-description', verbose: true,
     });
     const agentInput = {
@@ -98,22 +165,26 @@ export async function POST(req: NextRequest) {
     const performanceStartTime = PerformanceTracker.startTimer('performance', 'gemini-2.0-flash');
     const riskStartTime = PerformanceTracker.startTimer('risk', 'gemini-2.0-flash');
     const coachingStartTime = PerformanceTracker.startTimer('coaching', 'claude-3.5-sonnet');
+    const sentimentStartTime = PerformanceTracker.startTimer('sentiment', 'gemini-2.0-flash');
     
-    const [performanceResult, riskResult, coachingResult] = await Promise.allSettled([
+    const [performanceResult, riskResult, coachingResult, sentimentResult] = await Promise.allSettled([
       performanceAgent.call({ ...agentInput, input: 'You are a Performance Analyst. Focus on forecasting, benchmarking, and identifying improvement opportunities.\n' + agentInput.input }),
       riskAgent.call({ ...agentInput, input: 'You are a Risk Analyst. Identify SLA risks, compliance issues, and burnout.\n' + agentInput.input }),
       coachingAgent.call({ ...agentInput, input: 'You are a Coaching Analyst. Generate actionable coaching and quality insights.\n' + agentInput.input }),
+      sentimentAgent.call({ ...agentInput, input: 'You are a Sentiment Analyst. Analyze ticket sentiment and categorize issues.\n' + agentInput.input }),
     ]);
     
     // Record metrics for parallel agents
     PerformanceTracker.recordMetric('performance', 'gemini-2.0-flash', performanceStartTime, performanceResult.status === 'fulfilled');
     PerformanceTracker.recordMetric('risk', 'gemini-2.0-flash', riskStartTime, riskResult.status === 'fulfilled');
     PerformanceTracker.recordMetric('coaching', 'claude-3.5-sonnet', coachingStartTime, coachingResult.status === 'fulfilled');
+    PerformanceTracker.recordMetric('sentiment', 'gemini-2.0-flash', sentimentStartTime, sentimentResult.status === 'fulfilled');
     
     // Extract results (fallback to error messages if failed)
     const finalPerformanceResult = performanceResult.status === 'fulfilled' ? performanceResult.value : { error: performanceResult.reason };
     const finalRiskResult = riskResult.status === 'fulfilled' ? riskResult.value : { error: riskResult.reason };
     const finalCoachingResult = coachingResult.status === 'fulfilled' ? coachingResult.value : { error: coachingResult.reason };
+    const finalSentimentResult = sentimentResult.status === 'fulfilled' ? sentimentResult.value : { error: sentimentResult.reason };
 
     // 3. Synthesis Agent
     const synthesisTools = [
@@ -129,6 +200,7 @@ export async function POST(req: NextRequest) {
       performanceResult,
       riskResult,
       coachingResult,
+      sentimentResult,
       tickets: tickets || [],
       ...rest,
     };
@@ -141,6 +213,7 @@ export async function POST(req: NextRequest) {
         performanceResult: finalPerformanceResult,
         riskResult: finalRiskResult,
         coachingResult: finalCoachingResult,
+        sentimentResult: finalSentimentResult,
       });
       PerformanceTracker.recordMetric('synthesis', 'gpt-4o', synthesisStartTime, true);
     } catch (error) {
@@ -169,7 +242,34 @@ export async function POST(req: NextRequest) {
 
     // Get performance metrics
     const performanceMetrics = PerformanceTracker.getAveragePerformance();
-    const totalDuration = Date.now() - (discoveryStartTime || 0);
+    const totalDuration = Date.now() - startTime;
+    
+    // Count successful vs failed agents
+    const results = [performanceResult, riskResult, coachingResult, sentimentResult];
+    const successfulAgents = results.filter(r => r.status === 'fulfilled').length;
+    const failedAgents = results.filter(r => r.status === 'rejected').length;
+    
+    // Log multi-agent processing completion
+    await logMultiAgentEvent(
+      user,
+      'MULTI_AGENT_PROCESSING_COMPLETED',
+      {
+        agentTypes: ['discovery', 'performance', 'risk', 'coaching', 'sentiment', 'synthesis'],
+        ticketCount: tickets.length,
+        totalDuration,
+        successfulAgents: successfulAgents + 2, // +2 for discovery and synthesis
+        failedAgents,
+        modelsUsed: {
+          discovery: 'gemini-2.0-flash',
+          performance: 'gemini-2.0-flash',
+          risk: 'gemini-2.0-flash',
+          coaching: 'claude-3.5-sonnet',
+          sentiment: 'gemini-2.0-flash',
+          synthesis: 'gpt-4o'
+        }
+      },
+      correlationId
+    );
     
     // Final response
     return NextResponse.json({
@@ -178,10 +278,11 @@ export async function POST(req: NextRequest) {
         performance: finalPerformanceResult,
         risk: finalRiskResult,
         coaching: finalCoachingResult,
+        sentiment: finalSentimentResult,
         synthesis: synthesisResult,
         // social: socialResult,
         // query: queryResult,
-        summary: 'All agents have completed their analyses. Review the synthesis for a comprehensive executive report.',
+        summary: 'All agents have completed their analyses including sentiment analysis. Review the synthesis for a comprehensive executive report.',
         metrics: {
           totalDuration,
           agentMetrics: performanceMetrics,
@@ -190,12 +291,50 @@ export async function POST(req: NextRequest) {
             performance: 'gemini-2.0-flash',
             risk: 'gemini-2.0-flash',
             coaching: 'claude-3.5-sonnet (fallback to gemini-2.0-flash)',
+            sentiment: 'gemini-2.0-flash',
             synthesis: 'gpt-4o (fallback to gemini-2.0-flash)'
           }
+        },
+        audit: {
+          correlationId,
+          auditTrail: 'Multi-agent processing completed with comprehensive audit logging'
         }
       }
     });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Log failed multi-agent processing
+    await logMultiAgentEvent(
+      user,
+      'MULTI_AGENT_PROCESSING_COMPLETED',
+      {
+        agentTypes: ['discovery', 'performance', 'risk', 'coaching', 'sentiment', 'synthesis'],
+        ticketCount: 0,
+        totalDuration: Date.now() - startTime,
+        successfulAgents: 0,
+        failedAgents: 6,
+        errorMessage
+      },
+      correlationId
+    );
+    
+    // Log security event for processing failures (potential DoS or malformed requests)
+    await logSecurityEvent(
+      user,
+      'SUSPICIOUS_ACTIVITY_DETECTED',
+      {
+        threatLevel: 'low',
+        violationType: 'processing_failure',
+        resourceAttempted: '/api/multi-agent',
+        additionalContext: { error: errorMessage }
+      },
+      correlationId
+    );
+    
+    return NextResponse.json({ 
+      error: errorMessage,
+      audit: { correlationId }
+    }, { status: 500 });
   }
 } 

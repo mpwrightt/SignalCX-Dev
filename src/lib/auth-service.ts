@@ -209,7 +209,7 @@ async function getOrCreateUserProfile(firebaseUser: FirebaseUser): Promise<Authe
         organizationName,
         permissions: getRolePermissions(role),
         isActive: !!invitation || isBootstrapAdmin, // Active if invited or bootstrap admin
-        emailVerified: firebaseUser.emailVerified,
+        emailVerified: !!firebaseUser.emailVerified,
         invitedBy: invitation?.invitedBy,
       };
       

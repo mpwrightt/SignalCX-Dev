@@ -10,7 +10,7 @@ import {
   onAuthStateChange
 } from '@/lib/auth-service';
 import { useRouter } from 'next/navigation';
-import { logAuditEvent } from '@/lib/audit-service';
+import { logAuditEvent, logSecurityEvent } from '@/lib/audit-service';
 
 type AuthContextType = {
   user: AuthenticatedUser | null;
@@ -59,14 +59,96 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (userProfile) {
                 setUser(userProfile);
                 setSessionMode('enterprise');
-                await logAuditEvent(userProfile, 'USER_LOGIN', { mode: 'enterprise' });
+                
+                // Enhanced login audit with security metadata
+                await logAuditEvent(
+                  userProfile, 
+                  'USER_LOGIN', 
+                  {
+                    sessionId: firebaseUser.uid,
+                    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+                    success: true,
+                    dataSensitivity: 'confidential'
+                  },
+                  { 
+                    mode: 'enterprise',
+                    authProvider: 'firebase',
+                    emailVerified: firebaseUser.emailVerified,
+                    lastLoginAt: firebaseUser.metadata.lastSignInTime,
+                    accountCreated: firebaseUser.metadata.creationTime
+                  },
+                  {
+                    source: 'web',
+                    dataSensitivity: 'confidential'
+                  }
+                );
+
+                // Check for suspicious login patterns
+                if (userProfile.lastLoginAt) {
+                  const lastLogin = new Date(userProfile.lastLoginAt);
+                  const timeSinceLastLogin = Date.now() - lastLogin.getTime();
+                  const oneWeek = 7 * 24 * 60 * 60 * 1000;
+                  
+                  if (timeSinceLastLogin > oneWeek) {
+                    await logSecurityEvent(
+                      userProfile,
+                      'SUSPICIOUS_ACTIVITY_DETECTED',
+                      {
+                        threatLevel: 'low',
+                        violationType: 'unusual_login_pattern',
+                        additionalContext: {
+                          timeSinceLastLogin: Math.floor(timeSinceLastLogin / (24 * 60 * 60 * 1000)),
+                          unit: 'days'
+                        }
+                      }
+                    );
+                  }
+                }
+              } else {
+                // User exists in Firebase but not in our system
+                await logSecurityEvent(
+                  null,
+                  'UNAUTHORIZED_ACCESS_ATTEMPT',
+                  {
+                    threatLevel: 'medium',
+                    violationType: 'orphaned_firebase_user',
+                    resourceAttempted: 'user_profile',
+                    additionalContext: { firebaseUid: firebaseUser.uid }
+                  }
+                );
               }
             } catch (error) {
               console.error('Error fetching user profile:', error);
+              
+              // Log authentication system failure
+              await logSecurityEvent(
+                null,
+                'VULNERABILITY_DETECTED',
+                {
+                  threatLevel: 'high',
+                  violationType: 'auth_system_failure',
+                  additionalContext: { error: error instanceof Error ? error.message : String(error) }
+                }
+              );
+              
               setUser(null);
               setSessionMode(null);
             }
           } else {
+            // Session expired or user logged out
+            if (sessionMode !== 'demo' && user) {
+              await logAuditEvent(
+                user,
+                'SESSION_EXPIRED',
+                {
+                  sessionId: user.id,
+                  dataSensitivity: 'internal'
+                },
+                { mode: sessionMode },
+                { source: 'system' }
+              );
+            }
+            
             // Only clear if not in demo mode
             if (sessionMode !== 'demo') {
               setUser(null);
@@ -107,18 +189,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // User state will be updated via the auth state listener
         return { success: true };
       } else {
-        await logAuditEvent(null, 'USER_LOGIN_FAILED', { 
-          method: 'google', 
-          error: result.error 
-        });
+        // Enhanced failed login audit
+        await logSecurityEvent(
+          null,
+          'UNAUTHORIZED_ACCESS_ATTEMPT',
+          {
+            threatLevel: 'medium',
+            violationType: 'failed_google_login',
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+            additionalContext: { error: result.error }
+          }
+        );
+        
+        await logAuditEvent(
+          null, 
+          'USER_LOGIN_FAILED',
+          {
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+            success: false,
+            errorMessage: result.error,
+            dataSensitivity: 'internal'
+          },
+          { 
+            method: 'google', 
+            error: result.error,
+            timestamp: new Date().toISOString()
+          },
+          {
+            source: 'web',
+            severity: 'warning'
+          }
+        );
         return { success: false, error: result.error };
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      await logAuditEvent(null, 'USER_LOGIN_FAILED', { 
-        method: 'google', 
-        error: errorMessage 
-      });
+      
+      // Log potential security threats for repeated failures
+      await logSecurityEvent(
+        null,
+        'SUSPICIOUS_ACTIVITY_DETECTED',
+        {
+          threatLevel: 'medium',
+          violationType: 'login_system_error',
+          additionalContext: { error: errorMessage }
+        }
+      );
+      
+      await logAuditEvent(
+        null, 
+        'USER_LOGIN_FAILED',
+        {
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+          success: false,
+          errorMessage,
+          dataSensitivity: 'internal'
+        },
+        { 
+          method: 'google', 
+          error: errorMessage,
+          systemError: true 
+        },
+        {
+          source: 'web',
+          severity: 'error'
+        }
+      );
       return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
@@ -134,22 +270,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSessionMode('demo');
         window.sessionStorage.setItem(AUTH_SESSION_KEY, loggedInUser.id);
         window.sessionStorage.setItem(MODE_SESSION_KEY, 'demo');
-        await logAuditEvent(loggedInUser, 'USER_LOGIN', { mode: 'demo' });
+        await logAuditEvent(
+          loggedInUser, 
+          'USER_LOGIN',
+          {
+            sessionId: loggedInUser.id,
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+            success: true,
+            dataSensitivity: 'internal'
+          },
+          { 
+            mode: 'demo',
+            authProvider: 'demo',
+            email: email
+          },
+          {
+            source: 'web',
+            dataSensitivity: 'internal'
+          }
+        );
         return true;
       } else {
-        await logAuditEvent(null, 'USER_LOGIN_FAILED', { 
-          attemptedEmail: email, 
-          reason,
-          mode: 'demo'
-        });
+        await logAuditEvent(
+          null, 
+          'USER_LOGIN_FAILED',
+          {
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+            success: false,
+            errorMessage: reason,
+            dataSensitivity: 'internal'
+          },
+          { 
+            attemptedEmail: email, 
+            reason,
+            mode: 'demo'
+          },
+          {
+            source: 'web',
+            severity: 'warning'
+          }
+        );
         return false;
       }
     } catch (error) {
-      await logAuditEvent(null, 'USER_LOGIN_FAILED', { 
-        attemptedEmail: email, 
-        error: (error as Error).message,
-        mode: 'demo'
-      });
+      await logAuditEvent(
+        null, 
+        'USER_LOGIN_FAILED',
+        {
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+          success: false,
+          errorMessage: (error as Error).message,
+          dataSensitivity: 'internal'
+        },
+        { 
+          attemptedEmail: email, 
+          error: (error as Error).message,
+          mode: 'demo'
+        },
+        {
+          source: 'web',
+          severity: 'error'
+        }
+      );
       console.error('Demo login failed', error);
       return false;
     } finally {
@@ -159,7 +341,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     if (user) {
-      await logAuditEvent(user, 'USER_LOGOUT', { mode: sessionMode });
+      await logAuditEvent(
+        user, 
+        'USER_LOGOUT',
+        {
+          sessionId: user.id,
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+          success: true,
+          dataSensitivity: 'internal'
+        },
+        { 
+          mode: sessionMode,
+          duration: user.lastLoginAt ? Date.now() - new Date(user.lastLoginAt).getTime() : undefined
+        },
+        {
+          source: 'web',
+          dataSensitivity: 'internal'
+        }
+      );
     }
     
     try {
