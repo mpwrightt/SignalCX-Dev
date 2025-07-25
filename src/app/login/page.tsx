@@ -26,6 +26,40 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [loginMode, setLoginMode] = React.useState<'demo' | 'enterprise'>('demo');
 
+  // Check for error parameters from OAuth callback
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get('error');
+    const details = urlParams.get('details');
+    
+    if (errorParam) {
+      let errorMessage = 'Authentication failed. Please try again.';
+      
+      switch (errorParam) {
+        case 'oauth_error':
+          errorMessage = `OAuth error: ${details || 'Unknown error'}`;
+          break;
+        case 'session_exchange_failed':
+          errorMessage = `Session exchange failed: ${details || 'Unknown error'}`;
+          break;
+        case 'no_authorization_code':
+          errorMessage = 'No authorization code received from Google.';
+          break;
+        case 'unexpected_error':
+          errorMessage = `Unexpected error: ${details || 'Unknown error'}`;
+          break;
+        case 'authentication_failed':
+          errorMessage = 'Authentication failed. Please try again.';
+          break;
+      }
+      
+      setError(errorMessage);
+      
+      // Clean URL without refreshing
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   const handleLogin = async (email: string, password?: string) => {
     setIsLoading(true);
     setError(null);

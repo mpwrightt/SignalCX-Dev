@@ -390,8 +390,7 @@ export const aiAnalystFlow = ai.defineFlow(
             };
           } else if (toolName === 'batchAnalyze') {
             toolInput = {
-              tickets: input.tickets,
-              analysisType: input.analysisGoal as "comprehensive" | "performance" | "risk" | "trends" | "custom"
+              tickets: input.tickets
             };
           } else if (toolName === 'riskAnalysis') {
             toolInput = {

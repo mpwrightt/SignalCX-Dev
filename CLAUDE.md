@@ -29,11 +29,11 @@ All AI functionality is in `src/ai/flows/`. Each flow follows this pattern:
 ### Data Modes
 The app has two data modes controlled by `settings.appMode`:
 - **Demo Mode**: Uses mock data from `src/lib/mock-data.ts`
-- **Live Mode**: Real Zendesk API integration with Firebase backend
+- **Live Mode**: Real Zendesk API integration with Supabase backend
 
 ### State Management
 Uses React Context for global state:
-- `AuthProvider` (use-auth.ts) - User authentication with Firebase
+- `AuthProvider` (use-auth.ts) - User authentication with Supabase
 - `SettingsProvider` (use-settings.ts) - App settings in localStorage  
 - `DiagnosticsProvider` (use-diagnostics.ts) - AI flow debugging
 
@@ -52,14 +52,14 @@ Built on ShadCN UI components in `src/components/ui/`. Custom components compose
 
 ### Team Management System
 - `src/components/dashboard/team-management.tsx` - Complete team management interface
-- `src/lib/team-service.ts` - Firebase service layer for team operations
+- `src/lib/team-service.ts` - Supabase service layer for team operations
 - `src/app/api/send-invitation/route.ts` - Email invitation API
 - `src/app/accept-invitation/page.tsx` - Invitation acceptance flow
 
 ### Authentication & Security
-- `src/lib/auth-service.ts` - Firebase authentication with Google OAuth
+- `src/lib/auth-service-enhanced.ts` - Supabase authentication with Google OAuth
 - `src/lib/rbac-service.ts` - Role-based access control
-- `src/lib/firebase-config.ts` - Firebase configuration
+- `src/lib/supabase-config.ts` - Supabase configuration
 
 ## Testing
 
@@ -75,13 +75,9 @@ Required in `.env`:
 - `ANTHROPIC_API_KEY` - For Claude models in multi-agent optimization (optional)
 - `OPENAI_API_KEY` - For GPT models in multi-agent optimization (optional)
 
-### Firebase Configuration (required for production)
-- `NEXT_PUBLIC_FIREBASE_API_KEY` - Firebase API key
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` - Firebase auth domain
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID` - Firebase project ID
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` - Firebase storage bucket
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` - Firebase messaging sender ID
-- `NEXT_PUBLIC_FIREBASE_APP_ID` - Firebase app ID
+### Supabase Configuration (required for production)
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous public key
 
 ### Email System Configuration
 - `SMTP_EMAIL` - Gmail address for sending invitations
@@ -110,13 +106,14 @@ refactor files once code reaches 200-300 lines
 - **Email Invitations**: Professional HTML templates with SMTP integration
 - **Three-Tab Interface**: Team Members, Pending Invitations, Revoked Invitations
 - **User Management**: Activate/deactivate, role changes, comprehensive validation
-- **Firebase Integration**: Real-time data with Firestore backend
+- **Supabase Integration**: Real-time data with PostgreSQL backend
 
 ### Authentication & Security
-- **Firebase Authentication**: Google OAuth integration
-- **Production-Ready Security**: Firestore rules, PII scrubbing, audit logging
-- **Multi-Tenant Architecture**: Organization-scoped data isolation
+- **Supabase Authentication**: Google OAuth integration
+- **Single-Company Security**: RLS disabled for simplified database operations
+- **Application-Layer Security**: Organization-scoped data through application logic
 - **Session Management**: Secure token handling with automatic expiration
+- **PII Scrubbing**: Built-in PII detection and scrubbing for sensitive data
 
 ### AI & Analytics
 - **Multi-Agent System**: Parallel AI processing with multiple models
@@ -130,7 +127,7 @@ refactor files once code reaches 200-300 lines
 - Always run both servers during development (Next.js + Genkit)
 - AI flows use structured JSON output with Zod schemas
 - PII scrubbing is implemented in `src/lib/pii-scrubber.ts`
-- Authentication is production-ready with Firebase
+- Authentication is production-ready with Supabase
 - Single-page app design with mode-based rendering
 - Multi-agent route optimized with Gemini 2.0 Flash as primary model (`/api/multi-agent`)
 
@@ -199,7 +196,7 @@ Match testing approach to code complexity:
 
 ### Security & Performance
 - Always validate all inputs and scrub PII
-- Handle authentication properly with Firebase
+- Handle authentication properly with Supabase
 - Performance rule: Measure before optimizing. No guessing.
 
 ### Progress Tracking
@@ -236,16 +233,16 @@ Match testing approach to code complexity:
 │   │       └── (other dashboard components)
 │   │
 │   ├── hooks/                 # Custom React hooks
-│   │   ├── use-auth.ts        # Firebase authentication and session state
+│   │   ├── use-auth.ts        # Supabase authentication and session state
 │   │   ├── use-settings.ts    # Application settings via localStorage
 │   │   ├── use-toast.ts       # UI notifications
 │   │   └── use-diagnostics.ts # AI flow debugging
 │   │
 │   └── lib/                   # Shared utilities, services, and type definitions
-│       ├── auth-service.ts    # Firebase authentication logic
-│       ├── team-service.ts    # Team management Firebase operations
+│       ├── auth-service-enhanced.ts # Supabase authentication logic
+│       ├── team-service.ts    # Team management Supabase operations
 │       ├── rbac-service.ts    # Role-based access control
-│       ├── firebase-config.ts # Firebase/Firestore configuration
+│       ├── supabase-config.ts # Supabase configuration
 │       ├── audit-service.ts   # Server-side audit event logging
 │       ├── mock-data.ts       # Mock data templates for demo mode
 │       ├── types.ts           # Core TypeScript type definitions
@@ -254,9 +251,9 @@ Match testing approach to code complexity:
 │       ├── cache-service.ts   # Caching layer for performance optimization
 │       └── pii-scrubber.ts    # PII detection and scrubbing utilities
 │
-├── firebase.json              # Firebase configuration
-├── firestore.rules           # Firestore security rules
-├── firestore.indexes.json    # Firestore database indexes
+├── supabase/                 # Supabase configuration and migrations
+│   ├── migrations/           # Database migration files
+│   └── config.toml           # Supabase configuration
 ├── .env                      # Environment variables
 ├── next.config.ts            # Next.js configuration
 └── tsconfig.json             # TypeScript configuration
@@ -286,7 +283,7 @@ Match testing approach to code complexity:
 4. **Acceptance**: User clicks link → Google OAuth → automatic role assignment
 5. **Database Updates**: Invitation marked as accepted, user becomes active
 
-### Firebase Collections
+### Supabase Tables
 - **users**: User profiles with roles and permissions
 - **organizations**: Multi-tenant organization data
 - **invitations**: Pending/revoked invitations with tokens
@@ -296,7 +293,7 @@ Match testing approach to code complexity:
 ## Important Reminders
 
 - **Email System**: Uses Gmail SMTP - app password must be 16 characters without spaces
-- **Firebase**: Requires composite indexes for team member queries
+- **Supabase**: Uses PostgreSQL indexes for optimal query performance
 - **Security**: All operations are organization-scoped with role validation
 - **UI Theme**: Purple branding (#8b5cf6) throughout the application
 - **Error Handling**: Comprehensive validation with user-friendly toast notifications

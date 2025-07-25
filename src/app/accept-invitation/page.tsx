@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CheckCircle2, AlertCircle, UserPlus } from 'lucide-react';
-import { signInWithGoogle } from '@/lib/auth-service';
+import { signInWithGoogle } from '@/lib/auth-service-enhanced';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function AcceptInvitationPage() {

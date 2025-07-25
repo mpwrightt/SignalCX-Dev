@@ -6,7 +6,6 @@ import { scrubPii } from '@/lib/pii-scrubber';
 import type { BurnoutIndicator } from '@/lib/types';
 import type { ProcessedAnalyticsData } from '@/lib/analytics-preprocessor';
 import { AnalyticsPreprocessor } from '@/lib/analytics-preprocessor';
-import { AnalyticsCache } from '@/lib/analytics-cache';
 
 const BurnoutIndicatorsInputSchema = z.object({
   tickets: z.array(z.object({

@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+<<<<<<< HEAD
+=======
+// Removed Firebase cache service - using direct Supabase queries
+>>>>>>> c509106 (Complete Firebase to Supabase migration and cleanup)
 
 // Import all the individual AI flows
 import { getPerformanceForecasts } from '@/ai/flows/get-performance-forecasts';
@@ -49,9 +53,26 @@ async function logDiagnosticCall(type: 'sent' | 'received', flow: string, data: 
 }
 
 export async function POST(req: NextRequest) {
+<<<<<<< HEAD
   try {
     const body = await req.json();
     const { tickets } = body;
+=======
+  console.log('🔥 API ROUTE HIT: multi-agent-diagnostic');
+  console.log('🔥 API ROUTE HIT: multi-agent-diagnostic');
+  console.log('🔥 API ROUTE HIT: multi-agent-diagnostic');
+  
+  try {
+    const body = await req.json();
+    const { tickets, userId, organizationId, ticketHash } = body;
+    console.log('🔥 API ROUTE - Received body:', { 
+      hasTickets: !!tickets, 
+      ticketCount: tickets?.length, 
+      userId, 
+      organizationId,
+      hasTicketHash: !!ticketHash 
+    });
+>>>>>>> c509106 (Complete Firebase to Supabase migration and cleanup)
     
     console.log('[Multi-Agent Diagnostic] Starting comprehensive multi-agent analysis with ALL AI flows');
     
@@ -100,6 +121,11 @@ export async function POST(req: NextRequest) {
             success: true 
           };
           
+<<<<<<< HEAD
+=======
+          console.log(`✅ Flow ${flow.name} completed successfully:`, JSON.stringify(result, null, 2));
+          
+>>>>>>> c509106 (Complete Firebase to Supabase migration and cleanup)
         } catch (error) {
           const duration = Date.now() - flowStartTime;
           await logDiagnosticCall('received', flow.name, { error: error.message }, flow.agent, flow.model, duration);
@@ -153,6 +179,16 @@ export async function POST(req: NextRequest) {
     console.log('[Multi-Agent Diagnostic] Model usage:', modelUsage);
     console.log('[Multi-Agent Diagnostic] Timings:', agentTimings);
     
+<<<<<<< HEAD
+=======
+    // Note: Caching removed after Firebase migration - results are returned directly
+    console.log('📊 Multi-agent analysis completed, returning results directly');
+    
+    if (userId && organizationId) {
+      console.log('✅ Analysis completed for user:', userId);
+    }
+    
+>>>>>>> c509106 (Complete Firebase to Supabase migration and cleanup)
     return NextResponse.json(diagnosticResult);
     
   } catch (error) {

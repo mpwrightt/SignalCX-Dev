@@ -16,17 +16,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { hasPermission, canManageUser } from '@/lib/rbac-service';
 import { useToast } from '@/hooks/use-toast';
 import type { AuthenticatedUser, UserRole, UserInvitation } from '@/lib/types';
-import {
-  getTeamMembers,
-  getInvitations,
-  inviteTeamMember,
-  updateTeamMember,
-  deactivateTeamMember,
-  reactivateTeamMember,
-  revokeInvitation,
-  resendInvitation,
-  deleteInvitation,
-} from '@/lib/team-service';
+import { teamService } from '@/lib/team-service';
 
 export function TeamManagement() {
   const { user } = useAuth();
@@ -59,8 +49,8 @@ export function TeamManagement() {
     
     try {
       const [members, invites] = await Promise.all([
-        getTeamMembers(user.organizationId),
-        getInvitations(user.organizationId),
+        teamService.getTeamMembers(user.organizationId),
+        teamService.getInvitations(user.organizationId),
       ]);
       
       setTeamMembers(members);
@@ -83,7 +73,14 @@ export function TeamManagement() {
     
     setActionLoading('invite');
     try {
-      await inviteTeamMember(email, role, user.organizationId, user.organizationName, user.id, user.name);
+      await teamService.createInvitation({
+        email,
+        role,
+        organizationId: user.organizationId,
+        organizationName: user.organizationName,
+        invitedBy: user.id,
+        inviterName: user.name
+      });
       await loadData();
       toast({
         title: 'Success',
@@ -104,7 +101,16 @@ export function TeamManagement() {
   const handleUpdateMember = async (userId: string, updates: Partial<Pick<AuthenticatedUser, 'role' | 'isActive'>>) => {
     setActionLoading(userId);
     try {
-      await updateTeamMember(userId, updates);
+      if (updates.role) {
+        await teamService.updateMemberRole(userId, updates.role, user?.id || '');
+      }
+      if (updates.isActive !== undefined) {
+        if (updates.isActive) {
+          await teamService.reactivateMember(userId, user?.id || '');
+        } else {
+          await teamService.deactivateMember(userId, user?.id || '');
+        }
+      }
       await loadData();
       toast({
         title: 'Success',
@@ -125,7 +131,7 @@ export function TeamManagement() {
   const handleDeactivateMember = async (userId: string) => {
     setActionLoading(userId);
     try {
-      await deactivateTeamMember(userId);
+      await teamService.deactivateMember(userId, user?.id || '');
       await loadData();
       toast({
         title: 'Success',
@@ -146,7 +152,7 @@ export function TeamManagement() {
   const handleReactivateMember = async (userId: string) => {
     setActionLoading(userId);
     try {
-      await reactivateTeamMember(userId);
+      await teamService.reactivateMember(userId, user?.id || '');
       await loadData();
       toast({
         title: 'Success',
@@ -167,7 +173,7 @@ export function TeamManagement() {
   const handleRevokeInvitation = async (invitationId: string) => {
     setActionLoading(invitationId);
     try {
-      await revokeInvitation(invitationId);
+      await teamService.revokeInvitation(invitationId, user?.id || '');
       await loadData();
       toast({
         title: 'Success',
@@ -188,7 +194,7 @@ export function TeamManagement() {
   const handleResendInvitation = async (invitationId: string) => {
     setActionLoading(invitationId);
     try {
-      await resendInvitation(invitationId);
+      await teamService.resendInvitation(invitationId, user?.organizationName || 'Your Organization', user?.name || 'Team Admin');
       await loadData();
       toast({
         title: 'Success',

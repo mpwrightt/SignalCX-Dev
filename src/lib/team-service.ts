@@ -1,23 +1,9 @@
 /**
  * Team Management Service - Production Ready
- * Handles all team member and invitation operations with Firebase
+ * Handles all team member and invitation operations with Supabase
  */
 
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-  orderBy,
-  addDoc,
-} from 'firebase/firestore';
-import { db } from './firebase-config';
+import { createSupabaseBrowserClient } from './supabase-config';
 import type { AuthenticatedUser, UserRole, UserInvitation } from './types';
 import { getRolePermissions } from './rbac-service';
 
@@ -50,306 +36,442 @@ async function sendInvitationEmail({
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    console.error('Email API Error Response:', error);
-    throw new Error(`Email API Error: ${error.error || 'Failed to send invitation email'}${error.details ? ` - ${error.details}` : ''}`);
+    const error = await response.text();
+    throw new Error(error || 'Failed to send invitation email');
   }
 
   return response.json();
 }
 
-// Generate secure invitation token
-function generateInvitationToken(): string {
-  return btoa(crypto.randomUUID() + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
-}
-
-/**
- * Get all team members for an organization
- */
-export async function getTeamMembers(organizationId: string): Promise<AuthenticatedUser[]> {
-  try {
-    const usersRef = collection(db, 'users');
-    const q = query(
-      usersRef,
-      where('organizationId', '==', organizationId),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const snapshot = await getDocs(q);
-    const members: AuthenticatedUser[] = [];
-    
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      members.push({
-        id: doc.id,
-        name: data.name,
-        email: data.email,
-        role: data.role,
-        avatar: data.avatar || 'https://placehold.co/32x32.png',
-        organizationId: data.organizationId,
-        organizationName: data.organizationName,
-        department: data.department,
-        permissions: data.permissions || getRolePermissions(data.role),
-        isActive: data.isActive ?? true,
-        lastLoginAt: data.lastLoginAt?.toDate?.()?.toISOString(),
-        createdAt: data.createdAt?.toDate?.()?.toISOString(),
-        updatedAt: data.updatedAt?.toDate?.()?.toISOString(),
-        invitedBy: data.invitedBy,
-        emailVerified: data.emailVerified ?? false,
-      });
-    });
-    
-    return members;
-  } catch (error) {
-    console.error('Error fetching team members:', error);
-    throw new Error('Failed to load team members');
-  }
-}
-
-/**
- * Get all pending invitations for an organization
- */
-export async function getInvitations(organizationId: string): Promise<UserInvitation[]> {
-  try {
-    const invitationsRef = collection(db, 'invitations');
-    const q = query(
-      invitationsRef,
-      where('organizationId', '==', organizationId),
-      orderBy('invitedAt', 'desc')
-    );
-    
-    const snapshot = await getDocs(q);
-    const invitations: UserInvitation[] = [];
-    
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      invitations.push({
-        id: doc.id,
-        email: data.email,
-        role: data.role,
-        organizationId: data.organizationId,
-        organizationName: data.organizationName,
-        invitedBy: data.invitedBy,
-        inviterName: data.inviterName,
-        invitedAt: data.invitedAt?.toDate?.()?.toISOString() || data.invitedAt,
-        status: data.status,
-        expiresAt: data.expiresAt?.toDate?.()?.toISOString() || data.expiresAt,
-        token: data.token,
-      });
-    });
-    
-    return invitations;
-  } catch (error) {
-    console.error('Error fetching invitations:', error);
-    throw new Error('Failed to load invitations');
-  }
-}
-
-/**
- * Invite a new team member
- */
-export async function inviteTeamMember(
-  email: string,
-  role: UserRole,
-  organizationId: string,
-  organizationName: string,
-  invitedBy: string,
-  inviterName?: string
-): Promise<void> {
-  try {
-    // Check if user already exists
-    const usersRef = collection(db, 'users');
-    const existingUserQuery = query(usersRef, where('email', '==', email));
-    const existingUsers = await getDocs(existingUserQuery);
-    
-    if (!existingUsers.empty) {
-      throw new Error('User with this email already exists');
-    }
-    
-    // Check if invitation already exists
-    const invitationsRef = collection(db, 'invitations');
-    const existingInviteQuery = query(
-      invitationsRef,
-      where('email', '==', email),
-      where('status', '==', 'pending')
-    );
-    const existingInvites = await getDocs(existingInviteQuery);
-    
-    if (!existingInvites.empty) {
-      throw new Error('Pending invitation already exists for this email');
-    }
-    
-    // Create invitation
-    const invitation: Omit<UserInvitation, 'id'> = {
-      email,
-      role,
-      organizationId,
-      organizationName,
-      invitedBy,
-      inviterName,
-      invitedAt: new Date().toISOString(),
-      status: 'pending',
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
-      token: generateInvitationToken(),
-    };
-    
-    const docRef = await addDoc(invitationsRef, {
-      ...invitation,
-      invitedAt: serverTimestamp(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
-    
-    // Send invitation email
+export class TeamService {
+  /**
+   * Get all team members for an organization
+   */
+  async getTeamMembers(organizationId: string): Promise<AuthenticatedUser[]> {
     try {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('organization_id', organizationId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching team members:', error);
+        throw new Error('Failed to fetch team members');
+      }
+
+      return data.map(this.mapSupabaseUserToAuth);
+    } catch (error) {
+      console.error('Error in getTeamMembers:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a team member's role
+   */
+  async updateMemberRole(
+    userId: string,
+    newRole: UserRole,
+    updatedBy: string
+  ): Promise<void> {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      
+      // Update user role
+      const { error } = await supabase
+        .from('users')
+        .update({
+          role: newRole,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating member role:', error);
+        throw new Error('Failed to update member role');
+      }
+
+      // Log audit event
+      await this.logAuditEvent(userId, updatedBy, 'ROLE_UPDATED', {
+        newRole,
+        userId
+      });
+    } catch (error) {
+      console.error('Error in updateMemberRole:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Deactivate a team member (soft delete)
+   */
+  async deactivateMember(
+    userId: string,
+    deactivatedBy: string
+  ): Promise<void> {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      
+      // Deactivate user
+      const { error } = await supabase
+        .from('users')
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error deactivating member:', error);
+        throw new Error('Failed to deactivate member');
+      }
+
+      // Log audit event
+      await this.logAuditEvent(userId, deactivatedBy, 'USER_DEACTIVATED', {
+        userId
+      });
+    } catch (error) {
+      console.error('Error in deactivateMember:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reactivate a team member
+   */
+  async reactivateMember(
+    userId: string,
+    reactivatedBy: string
+  ): Promise<void> {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      
+      // Reactivate user
+      const { error } = await supabase
+        .from('users')
+        .update({
+          is_active: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error reactivating member:', error);
+        throw new Error('Failed to reactivate member');
+      }
+
+      // Log audit event
+      await this.logAuditEvent(userId, reactivatedBy, 'USER_REACTIVATED', {
+        userId
+      });
+    } catch (error) {
+      console.error('Error in reactivateMember:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all invitations for an organization
+   */
+  async getInvitations(organizationId: string): Promise<UserInvitation[]> {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('organization_id', organizationId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching invitations:', error);
+        throw new Error('Failed to fetch invitations');
+      }
+
+      return data.map(this.mapSupabaseInvitationToType);
+    } catch (error) {
+      console.error('Error in getInvitations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create and send a new invitation
+   */
+  async createInvitation({
+    email,
+    role,
+    organizationId,
+    organizationName,
+    invitedBy,
+    inviterName,
+  }: {
+    email: string;
+    role: UserRole;
+    organizationId: string;
+    organizationName: string;
+    invitedBy: string;
+    inviterName: string;
+  }): Promise<UserInvitation> {
+    try {
+      // Check if invitation already exists
+      const existingInvitation = await this.getInvitationByEmail(
+        email,
+        organizationId
+      );
+      if (existingInvitation) {
+        throw new Error('Invitation already exists for this email');
+      }
+
+      // Generate secure token
+      const token = crypto.randomUUID();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+
+      const supabase = createSupabaseBrowserClient();
+      
+      // Create invitation
+      const { data, error } = await supabase
+        .from('invitations')
+        .insert({
+          email,
+          role,
+          organization_id: organizationId,
+          token,
+          invited_by: invitedBy,
+          expires_at: expiresAt.toISOString(),
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating invitation:', error);
+        throw new Error('Failed to create invitation');
+      }
+
+      // Send invitation email
       await sendInvitationEmail({
         email,
         organizationName,
         role,
-        inviterName: inviterName || invitedBy,
-        token: invitation.token,
+        inviterName,
+        token,
       });
-      console.log('Invitation email sent successfully to:', email);
-    } catch (emailError) {
-      console.error('Failed to send invitation email:', emailError);
-      // Don't throw here - the invitation is still created even if email fails
-    }
-    
-  } catch (error) {
-    console.error('Error inviting team member:', error);
-    if (error instanceof Error) {
+
+      // Log audit event
+      await this.logAuditEvent(organizationId, invitedBy, 'INVITATION_CREATED', {
+        email,
+        role,
+        invitationId: data.id
+      });
+
+      return this.mapSupabaseInvitationToType(data);
+    } catch (error) {
+      console.error('Error in createInvitation:', error);
       throw error;
     }
-    throw new Error('Failed to send invitation');
   }
-}
 
-/**
- * Update team member role and status
- */
-export async function updateTeamMember(
-  userId: string,
-  updates: Partial<Pick<AuthenticatedUser, 'role' | 'isActive' | 'department'>>
-): Promise<void> {
-  try {
-    const userRef = doc(db, 'users', userId);
-    
-    // If role is being updated, update permissions too
-    const updateData: any = {
-      ...updates,
-      updatedAt: serverTimestamp(),
-    };
-    
-    if (updates.role) {
-      updateData.permissions = getRolePermissions(updates.role);
-    }
-    
-    await updateDoc(userRef, updateData);
-  } catch (error) {
-    console.error('Error updating team member:', error);
-    throw new Error('Failed to update team member');
-  }
-}
-
-/**
- * Deactivate team member
- */
-export async function deactivateTeamMember(userId: string): Promise<void> {
-  try {
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      isActive: false,
-      updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    console.error('Error deactivating team member:', error);
-    throw new Error('Failed to deactivate team member');
-  }
-}
-
-/**
- * Reactivate team member
- */
-export async function reactivateTeamMember(userId: string): Promise<void> {
-  try {
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      isActive: true,
-      updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    console.error('Error reactivating team member:', error);
-    throw new Error('Failed to reactivate team member');
-  }
-}
-
-/**
- * Revoke invitation
- */
-export async function revokeInvitation(invitationId: string): Promise<void> {
-  try {
-    const invitationRef = doc(db, 'invitations', invitationId);
-    await updateDoc(invitationRef, {
-      status: 'revoked',
-      updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    console.error('Error revoking invitation:', error);
-    throw new Error('Failed to revoke invitation');
-  }
-}
-
-/**
- * Resend invitation
- */
-export async function resendInvitation(invitationId: string): Promise<void> {
-  try {
-    const invitationRef = doc(db, 'invitations', invitationId);
-    const invitationDoc = await getDoc(invitationRef);
-    
-    if (!invitationDoc.exists()) {
-      throw new Error('Invitation not found');
-    }
-    
-    const newToken = generateInvitationToken();
-    
-    // Update expiration date and generate new token
-    await updateDoc(invitationRef, {
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      token: newToken,
-      updatedAt: serverTimestamp(),
-    });
-    
-    // Send new invitation email
-    const invitationData = invitationDoc.data();
+  /**
+   * Revoke an invitation
+   */
+  async revokeInvitation(
+    invitationId: string,
+    revokedBy: string
+  ): Promise<void> {
     try {
-      await sendInvitationEmail({
-        email: invitationData.email,
-        organizationName: invitationData.organizationName || 'Your Organization',
-        role: invitationData.role,
-        inviterName: invitationData.inviterName || invitationData.invitedBy,
-        token: newToken,
+      const supabase = createSupabaseBrowserClient();
+      
+      // Update invitation status
+      const { error } = await supabase
+        .from('invitations')
+        .update({
+          status: 'revoked',
+          revoked_at: new Date().toISOString()
+        })
+        .eq('id', invitationId);
+
+      if (error) {
+        console.error('Error revoking invitation:', error);
+        throw new Error('Failed to revoke invitation');
+      }
+
+      // Log audit event
+      await this.logAuditEvent(invitationId, revokedBy, 'INVITATION_REVOKED', {
+        invitationId
       });
-      console.log('Invitation email resent successfully to:', invitationData.email);
-    } catch (emailError) {
-      console.error('Failed to resend invitation email:', emailError);
-      // Don't throw here - the invitation is still updated even if email fails
+    } catch (error) {
+      console.error('Error in revokeInvitation:', error);
+      throw error;
     }
-    
-  } catch (error) {
-    console.error('Error resending invitation:', error);
-    throw new Error('Failed to resend invitation');
+  }
+
+  /**
+   * Resend an invitation
+   */
+  async resendInvitation(
+    invitationId: string,
+    organizationName: string,
+    inviterName: string
+  ): Promise<void> {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      
+      // Get invitation details
+      const { data: invitation, error } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('id', invitationId)
+        .single();
+
+      if (error || !invitation) {
+        throw new Error('Invitation not found');
+      }
+
+      if (invitation.status !== 'pending') {
+        throw new Error('Can only resend pending invitations');
+      }
+
+      // Check if not expired
+      if (new Date(invitation.expires_at) < new Date()) {
+        throw new Error('Invitation has expired');
+      }
+
+      // Resend email
+      await sendInvitationEmail({
+        email: invitation.email,
+        organizationName,
+        role: invitation.role,
+        inviterName,
+        token: invitation.token,
+      });
+
+      // Log audit event
+      await this.logAuditEvent(
+        invitation.organization_id,
+        invitation.invited_by,
+        'INVITATION_RESENT',
+        { invitationId }
+      );
+    } catch (error) {
+      console.error('Error in resendInvitation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get invitation by email for organization
+   */
+  private async getInvitationByEmail(
+    email: string,
+    organizationId: string
+  ): Promise<UserInvitation | null> {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('email', email)
+        .eq('organization_id', organizationId)
+        .eq('status', 'pending')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking existing invitation:', error);
+        return null;
+      }
+
+      return data ? this.mapSupabaseInvitationToType(data) : null;
+    } catch (error) {
+      console.error('Error in getInvitationByEmail:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Log audit event with detailed error reporting
+   */
+  private async logAuditEvent(
+    organizationId: string,
+    userId: string,
+    action: string,
+    metadata: Record<string, any>
+  ): Promise<void> {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      
+      console.log('[AUDIT] Attempting to log:', { organizationId, userId, action });
+      
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .insert({
+          organization_id: organizationId,
+          user_id: userId,
+          action,
+          resource_type: 'team_management',
+          metadata
+        })
+        .select();
+
+      if (error) {
+        console.error('[AUDIT] Database error:', error);
+        console.error('[AUDIT] Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+      } else {
+        console.log('[AUDIT] Successfully logged:', data);
+      }
+    } catch (error) {
+      console.error('[AUDIT] Unexpected error:', error);
+      // Don't throw here - audit logging failure shouldn't break the operation
+    }
+  }
+
+  /**
+   * Map Supabase user data to AuthenticatedUser type
+   */
+  private mapSupabaseUserToAuth(user: any): AuthenticatedUser {
+    return {
+      id: user.id,
+      name: user.display_name || '',
+      email: user.email,
+      role: user.role,
+      avatar: user.photo_url || '',
+      organizationId: user.organization_id,
+      permissions: getRolePermissions(user.role),
+      isActive: user.is_active,
+      lastLoginAt: user.last_login || undefined,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+      emailVerified: user.email_verified || true,
+      firebaseUid: undefined
+    };
+  }
+
+  /**
+   * Map Supabase invitation data to UserInvitation type
+   */
+  private mapSupabaseInvitationToType(inv: any): UserInvitation {
+    return {
+      id: inv.id,
+      email: inv.email,
+      role: inv.role,
+      organizationId: inv.organization_id,
+      invitedBy: inv.invited_by,
+      invitedAt: inv.created_at,
+      expiresAt: inv.expires_at,
+      status: inv.status,
+      token: inv.token,
+      // acceptedAt and revokedAt are handled by status field
+    };
   }
 }
 
-/**
- * Delete invitation
- */
-export async function deleteInvitation(invitationId: string): Promise<void> {
-  try {
-    const invitationRef = doc(db, 'invitations', invitationId);
-    await deleteDoc(invitationRef);
-  } catch (error) {
-    console.error('Error deleting invitation:', error);
-    throw new Error('Failed to delete invitation');
-  }
-}
+// Export singleton instance
+export const teamService = new TeamService();

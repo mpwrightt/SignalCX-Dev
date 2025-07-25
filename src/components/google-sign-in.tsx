@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { signInWithGoogle } from '@/lib/auth-service';
+import { signInWithGoogle } from '@/lib/auth-service-enhanced';
 
 interface GoogleSignInProps {
   onSuccess?: (user: any) => void;

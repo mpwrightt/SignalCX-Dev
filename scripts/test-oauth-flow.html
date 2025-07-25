@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test OAuth Flow</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Google OAuth</h1>
+    <button id="loginBtn">Login with Google</button>
+    <div id="status"></div>
+    <div id="user"></div>
+
+    <script>
+        const supabaseUrl = 'https://hctmugeoavtqelnasiqy.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdG11Z2VvYXZ0cWVsbmFzaXF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MDU3NDIsImV4cCI6MjA2ODk4MTc0Mn0.eOSHSYyNX7Mem3v2czVLciV7Dggt4XDbPCb3d_Z_m7M'
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+        
+        const status = document.getElementById('status')
+        const userDiv = document.getElementById('user')
+        
+        // Check for existing session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                status.innerHTML = '✅ Already logged in'
+                userDiv.innerHTML = `<pre>${JSON.stringify(session.user, null, 2)}</pre>`
+            } else {
+                status.innerHTML = '❌ Not logged in'
+            }
+        })
+        
+        // Listen for auth changes
+        supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Auth event:', event, session)
+            if (session) {
+                status.innerHTML = `✅ ${event} - Logged in as ${session.user.email}`
+                userDiv.innerHTML = `<pre>${JSON.stringify(session.user, null, 2)}</pre>`
+            } else {
+                status.innerHTML = `❌ ${event} - Not logged in`
+                userDiv.innerHTML = ''
+            }
+        })
+        
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            status.innerHTML = '🔄 Initiating Google OAuth...'
+            
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.href
+                }
+            })
+            
+            if (error) {
+                status.innerHTML = `❌ Error: ${error.message}`
+                console.error('OAuth error:', error)
+            } else {
+                status.innerHTML = '🔄 Redirecting to Google...'
+                console.log('OAuth data:', data)
+            }
+        })
+    </script>
+</body>
+</html>

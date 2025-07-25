@@ -12,7 +12,6 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import type { ProcessedAnalyticsData } from '@/lib/analytics-preprocessor';
 import { AnalyticsPreprocessor } from '@/lib/analytics-preprocessor';
-import { AnalyticsCache } from '@/lib/analytics-cache';
 
 const AnalyzedTicketForForecastSchema = z.object({
   id: z.number(),
