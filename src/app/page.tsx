@@ -120,7 +120,7 @@ import { useSettings } from "@/hooks/use-settings";
 import { useDiagnostics } from "@/hooks/use-diagnostics";
 import { fetchTickets } from "@/ai/flows/fetch-and-analyze-tickets";
 import { useToast } from "@/hooks/use-toast";
-import { useNetworkStatus } from "@/hooks/use-network";
+// Network status is handled automatically by Supabase
 import { useAuth } from "@/hooks/use-auth";
 import { Progress } from "@/components/ui/progress";
 import { FilterControls } from "@/components/dashboard/filter-controls";
@@ -134,6 +134,7 @@ import { SocialIntelligenceView } from "@/components/dashboard/social-intelligen
 import { AISearchView } from "@/components/dashboard/ai-search-view";
 import { TicketExplorerView } from "@/components/dashboard/ticket-explorer-view";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
+import { TicketGenerator } from "@/components/dashboard/ticket-generator";
 import { DiagnosticsView } from "@/components/dashboard/diagnostics-view";
 import { EnterpriseUserManagement } from "@/components/dashboard/enterprise-user-management";
 import { TeamManagement } from "@/components/dashboard/team-management";
@@ -229,7 +230,7 @@ export default function DashboardPage() {
   const { user, logout, isLoading: authLoading, sessionMode } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const isOnline = useNetworkStatus();
+  const isOnline = true; // Network status is handled automatically by Supabase
   const [tickets, setTickets] = React.useState<AnalyzedTicket[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
@@ -1072,8 +1073,12 @@ export default function DashboardPage() {
           activeView,
           sessionMode,
           settings.ticketFetchLimit,
-          dateRange
+          dateRange,
+          user?.organizationId
         );
+        
+        console.log('[DASHBOARD] Raw tickets fetched:', rawTickets.length);
+        console.log('[DASHBOARD] Sample ticket:', rawTickets[0]);
         
         // Load test tickets from localStorage
         let testTickets: Ticket[] = [];
@@ -1087,8 +1092,23 @@ export default function DashboardPage() {
           console.error('Failed to load test tickets from localStorage:', error);
         }
         
-        // Combine regular tickets with test tickets
-        const allTickets = [...rawTickets, ...testTickets];
+        // Remove duplicates from raw tickets first
+        const uniqueRawTickets = rawTickets.filter((ticket, index, self) => 
+          index === self.findIndex(t => t.id === ticket.id)
+        );
+        
+        console.log('[DASHBOARD] Raw tickets IDs (before dedup):', rawTickets.map(t => t.id));
+        console.log('[DASHBOARD] Raw tickets IDs (after dedup):', uniqueRawTickets.map(t => t.id));
+        console.log('[DASHBOARD] Test tickets IDs:', testTickets.map(t => t.id));
+        
+        // Filter out test tickets that have the same ID as generated tickets
+        const uniqueTestTickets = testTickets.filter(testTicket => 
+          !uniqueRawTickets.some(rawTicket => rawTicket.id === testTicket.id)
+        );
+        
+        const allTickets = [...uniqueRawTickets, ...uniqueTestTickets];
+        console.log('[DASHBOARD] Combined tickets IDs:', allTickets.map(t => t.id));
+        console.log('[DASHBOARD] Any duplicate IDs:', allTickets.map(t => t.id).length !== new Set(allTickets.map(t => t.id)).size);
         
         const cachedAnalyses = getLocalCachedAnalyses(allTickets.map(t => t.id));
 
@@ -1100,6 +1120,7 @@ export default function DashboardPage() {
         });
 
         setTickets(ticketsWithCache);
+        console.log('[DASHBOARD] Tickets set in state:', ticketsWithCache.length);
         
         if (ticketsWithCache.some(t => (t as AnalyzedTicket).sentiment)) {
           setIsAnalyzed(true);
@@ -1944,6 +1965,7 @@ export default function DashboardPage() {
       case 'clustering': return 'Ticket Clustering';
       case 'social': return 'Social Intelligence';
       case 'ai-search': return 'AI Search';
+      case 'ticket-generator': return 'AI Ticket Generator';
       case 'diagnostics': return 'Diagnostics';
       default: return 'Dashboard';
     }
@@ -2006,6 +2028,16 @@ export default function DashboardPage() {
                   >
                     <FileSearch className="h-5 w-5" />
                     <span>AI Search</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip="AI Ticket Generator"
+                    onClick={() => setMode('ticket-generator')}
+                    isActive={mode === 'ticket-generator'}
+                  >
+                    <Sparkles className="h-5 w-5" />
+                    <span>Ticket Generator</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -2289,6 +2321,8 @@ export default function DashboardPage() {
                   forecastDays={settings.forecastDays}
                   prediction={prediction}
                 />
+              ) : mode === 'ticket-generator' ? (
+                <TicketGenerator />
               ) : mode === 'team-management' ? (
                 <TeamManagement />
               ) : null}

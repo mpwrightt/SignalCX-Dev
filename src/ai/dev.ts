@@ -22,4 +22,5 @@ import '@/ai/flows/agentic-discovery.ts';
 import '@/ai/flows/agentic-hypothesis.ts';
 import '@/ai/flows/agentic-synthesis.ts';
 import '@/ai/flows/agentic-targeted-analysis.ts';
+import '@/ai/flows/generate-zendesk-tickets.ts';
 import '@/ai/tools/web-search.ts';

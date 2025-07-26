@@ -9,32 +9,48 @@
  */
 
 import type { Ticket } from '@/lib/types';
-import { fetchMockTicketsForView } from '@/lib/zendesk-service';
 import { fetchLiveTicketsForView } from '@/lib/zendesk-service-live';
+import { GeneratedTicketService, type StoredTicket } from '@/lib/generated-ticket-service';
 import type { DateRange } from 'react-day-picker';
 
 /**
- * Converts EnterpriseTicket to legacy Ticket format for compatibility
+ * Converts StoredTicket (from generated_tickets table) to legacy Ticket format for compatibility
  */
-function convertEnterpriseTicketToTicket(enterpriseTicket: EnterpriseTicket): Ticket {
+function convertStoredTicketToTicket(storedTicket: StoredTicket): Ticket {
+  const zendeskTicket = storedTicket.ticket_data;
+  
+  console.log('[CONVERSION] Converting ticket:', zendeskTicket.id, zendeskTicket.subject);
+  
   return {
-    id: enterpriseTicket.id,
-    subject: enterpriseTicket.subject,
-    requester: enterpriseTicket.requester || 'Unknown',
-    assignee: enterpriseTicket.assignee || undefined,
-    description: enterpriseTicket.description || '',
-    created_at: enterpriseTicket.created_at,
-    first_response_at: enterpriseTicket.first_response_at,
-    solved_at: enterpriseTicket.solved_at,
-    status: enterpriseTicket.status === 'on-hold' ? 'hold' : enterpriseTicket.status as any,
-    priority: enterpriseTicket.priority,
-    tags: enterpriseTicket.tags || [],
-    view: enterpriseTicket.view || 'Generated Data',
-    category: enterpriseTicket.category || 'general',
-    conversation: enterpriseTicket.conversation || [],
-    sla_breached: enterpriseTicket.sla_breached || false,
-    csat_score: enterpriseTicket.csat_score
+    id: zendeskTicket.id,
+    subject: zendeskTicket.subject,
+    requester: zendeskTicket.via?.source?.from?.name || zendeskTicket.via?.source?.from?.address || 'Unknown',
+    assignee: `Agent ${zendeskTicket.assignee_id}`,
+    description: zendeskTicket.description || '',
+    created_at: zendeskTicket.created_at,
+    first_response_at: null, // Generated tickets don't have response times yet
+    solved_at: zendeskTicket.status === 'solved' ? zendeskTicket.updated_at : null,
+    status: zendeskTicket.status === 'hold' ? 'on-hold' : zendeskTicket.status as any,
+    priority: zendeskTicket.priority || 'normal',
+    tags: zendeskTicket.tags || [],
+    view: 'Generated Data',
+    category: storedTicket.scenario,
+    conversation: [], // Generated tickets don't have conversations yet
+    sla_breached: false, // Could calculate this based on created_at and priority
+    csat_score: null // Generated tickets don't have CSAT scores yet
   };
+}
+
+/**
+ * Fetches generated tickets from Supabase for demo mode
+ */
+async function fetchGeneratedTickets(organizationId: string, limit: number): Promise<StoredTicket[]> {
+  const ticketService = new GeneratedTicketService();
+  return await ticketService.getTickets(organizationId, {
+    limit,
+    sortBy: 'created_at',
+    sortOrder: 'desc'
+  });
 }
 
 /**
@@ -62,26 +78,31 @@ export async function fetchTickets(
       console.log('[ENTERPRISE MODE] Fetching tickets from live data source...');
       return await fetchLiveTicketsForView(view, ticketFetchLimit);
     } else {
-      console.log('[DEMO MODE] Checking for generated tickets first...');
+      console.log('[DEMO MODE] Fetching generated tickets from Supabase...');
+      console.log('[DEMO MODE] Organization ID:', organizationId);
       
-      // First try to fetch AI-generated tickets from Firebase
-      if (organizationId) {
-        try {
-          const generatedTickets = await fetchGeneratedTickets(organizationId, ticketFetchLimit);
-          if (generatedTickets.length > 0) {
-            console.log(`[DEMO MODE] Found ${generatedTickets.length} generated tickets, using them instead of mock data`);
-            // Convert EnterpriseTickets to legacy Ticket format
-            const convertedTickets = generatedTickets.map(convertEnterpriseTicketToTicket);
-            return convertedTickets;
-          }
-        } catch (generatedError) {
-          console.log('[DEMO MODE] Error fetching generated tickets, falling back to mock data:', generatedError);
-        }
+      // Fetch AI-generated tickets from Supabase - no fallback to mock data
+      if (!organizationId) {
+        console.warn('[DEMO MODE] No organization ID provided - cannot fetch generated tickets');
+        return [];
       }
       
-      // Fallback to mock data if no generated tickets or no organizationId
-      console.log('[DEMO MODE] No generated tickets found, using mock data...');
-      return await fetchMockTicketsForView(view, ticketFetchLimit, dateRange);
+      try {
+        const generatedTickets = await fetchGeneratedTickets(organizationId, ticketFetchLimit);
+        console.log(`[DEMO MODE] Found ${generatedTickets.length} generated tickets`);
+        
+        if (generatedTickets.length === 0) {
+          console.log('[DEMO MODE] No generated tickets found - user needs to generate tickets first');
+          return [];
+        }
+        
+        // Convert StoredTickets to legacy Ticket format
+        const convertedTickets = generatedTickets.map(convertStoredTicketToTicket);
+        return convertedTickets;
+      } catch (error) {
+        console.error('[DEMO MODE] Error fetching generated tickets:', error);
+        return [];
+      }
     }
   } catch (error) {
     console.error(
