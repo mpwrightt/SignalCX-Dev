@@ -11,6 +11,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint` - Run ESLint to check code quality
 - `npm run typecheck` - Run TypeScript type checking
 - `npm run test` - Run Jest tests
+- `npm run migrate:supabase` - Run Supabase migration scripts
+- `npm run validate:migration` - Validate migration integrity
 
 ## Key Architecture Points
 
@@ -28,8 +30,8 @@ All AI functionality is in `src/ai/flows/`. Each flow follows this pattern:
 
 ### Data Modes
 The app has two data modes controlled by `settings.appMode`:
-- **Demo Mode**: Uses mock data from `src/lib/mock-data.ts`
-- **Live Mode**: Real Zendesk API integration with Supabase backend
+- **Demo Mode**: Uses AI-generated tickets stored in Supabase (`generated_tickets` table)
+- **Enterprise Mode**: Real Zendesk API integration with Supabase backend
 
 ### State Management
 Uses React Context for global state:
@@ -48,6 +50,7 @@ Built on ShadCN UI components in `src/components/ui/`. Custom components compose
 - `src/components/dashboard/` - Dashboard view components
 - `src/lib/types.ts` - Core TypeScript type definitions
 - `src/lib/zendesk-service.ts` - Data fetching (mock/live)
+- `src/lib/generated-ticket-service.ts` - AI ticket generation and management
 - `src/hooks/` - Custom React hooks
 
 ### Team Management System
@@ -64,9 +67,12 @@ Built on ShadCN UI components in `src/components/ui/`. Custom components compose
 ## Testing
 
 - Jest with React Testing Library
-- Test files use `.test.tsx` extension
+- Test files use `.test.tsx` extension  
 - Setup file: `jest.setup.ts`
 - Path alias: `@/` maps to `src/`
+- Transform configuration handles ESM modules (lucide-react, @genkit-ai)
+- Coverage provider: v8
+- Test environment: jsdom
 
 ## Environment Variables
 
@@ -120,6 +126,8 @@ refactor files once code reaches 200-300 lines
 - **Performance Monitoring**: Built-in AI model selection and timing
 - **Structured Output**: All AI flows use Zod schemas for type safety
 - **Real-Time Analytics**: Live dashboard updates with predictive insights
+- **Chunked Ticket Generation**: AI generates tickets in chunks (8 per batch) with retry logic
+- **Database Duplicate Prevention**: Post-generation duplicate checking prevents ID conflicts
 
 ## Important Notes
 
@@ -136,6 +144,8 @@ refactor files once code reaches 200-300 lines
 - TypeScript strict mode enforced
 - Production-ready error handling and validation
 - Comprehensive test coverage for critical paths
+- Security headers configured in Next.js (XSS, MIME, Frame protection)
+- Server external packages configured for Genkit AI
 
 ### Core Workflow
 **Research → Plan → Implement → Validate**
@@ -221,7 +231,10 @@ Match testing approach to code complexity:
 │   │   └── page.tsx           # Main application component (Dashboard, Explorer, etc.)
 │   │
 │   ├── ai/                    # All Genkit-related code
-│   │   ├── flows/             # Individual AI flows (summarize, predict, agentic-analysis)
+│   │   ├── flows/             # Individual AI flows (summarize, predict, ticket generation)
+│   │   │   ├── generate-zendesk-tickets.ts # Chunked AI ticket generation
+│   │   │   ├── fetch-and-analyze-tickets.ts # Main data fetching flow
+│   │   │   └── (20+ other specialized AI flows)
 │   │   ├── genkit.ts          # Genkit configuration and initialization
 │   │   └── dev.ts             # Entry point for the Genkit development server
 │   │
@@ -242,7 +255,9 @@ Match testing approach to code complexity:
 │       ├── auth-service-enhanced.ts # Supabase authentication logic
 │       ├── team-service.ts    # Team management Supabase operations
 │       ├── rbac-service.ts    # Role-based access control
-│       ├── supabase-config.ts # Supabase configuration
+│       ├── supabase-config.ts # Supabase configuration and client setup
+│       ├── supabase-service.ts # Core Supabase database operations
+│       ├── generated-ticket-service.ts # AI ticket generation management
 │       ├── audit-service.ts   # Server-side audit event logging
 │       ├── mock-data.ts       # Mock data templates for demo mode
 │       ├── types.ts           # Core TypeScript type definitions
@@ -289,12 +304,46 @@ Match testing approach to code complexity:
 - **invitations**: Pending/revoked invitations with tokens
 - **audit_logs**: Complete activity tracking
 - **settings**: Organization-specific configuration
+- **generated_tickets**: AI-generated Zendesk tickets for demo mode
+- **tickets**: Live ticket data from Zendesk integration
+- **conversations**: Ticket conversation threads
+
+## AI Ticket Generation System
+
+### Architecture
+The `generate-zendesk-tickets.ts` flow uses a sophisticated chunked generation approach:
+
+1. **Dynamic ID Management**: Queries database for highest existing ticket ID to prevent duplicates
+2. **Chunked Processing**: Splits large requests (>8 tickets) into smaller batches
+3. **Retry Logic**: Exponential backoff with 3 retries for API failures
+4. **JSON Recovery**: Automatic parsing and repair of malformed AI responses
+5. **Database Validation**: Post-generation duplicate checking and filtering
+6. **Rate Limiting**: 1-1.5 second delays between chunks to respect API limits
+
+### Key Features
+- **Scalable**: Supports up to 200 tickets per generation request
+- **Reliable**: Handles Google AI API failures gracefully
+- **Sequential IDs**: Maintains proper ticket numbering across chunks
+- **Organization Scoped**: All tickets are properly isolated by organization
+
+### Usage Pattern
+```typescript
+// Generate tickets with automatic chunking and error handling
+const result = await generateZendeskTickets({
+  count: 50,
+  scenario: 'mixed',
+  organization_id: orgId
+});
+```
 
 ## Important Reminders
 
 - **Email System**: Uses Gmail SMTP - app password must be 16 characters without spaces
-- **Supabase**: Uses PostgreSQL indexes for optimal query performance
+- **Supabase**: Uses PostgreSQL with JSONB queries for ticket data  
 - **Security**: All operations are organization-scoped with role validation
 - **UI Theme**: Purple branding (#8b5cf6) throughout the application
 - **Error Handling**: Comprehensive validation with user-friendly toast notifications
 - **Performance**: Real-time updates with optimistic UI patterns
+- **Database Migration**: Supabase replaces Firebase - migration scripts available
+- **Project Name**: SignalCX - AI-Powered Support Ticket Analytics & Team Management Platform
+- **Port Configuration**: Next.js runs on port 9002, Genkit UI on port 4000

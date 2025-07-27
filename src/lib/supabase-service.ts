@@ -13,6 +13,7 @@ class SupabaseService {
   // User Operations
   // =============================================================================
 
+
   async createUser(user: Partial<AuthenticatedUser>): Promise<ServiceResult<string>> {
     try {
       // Validate required fields
@@ -123,8 +124,7 @@ class SupabaseService {
         lastLoginAt: data.last_login || undefined,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
-        emailVerified: data.email_verified || true,
-        firebaseUid: undefined
+        emailVerified: data.email_verified || true
       }
 
       return { data: user, error: null }

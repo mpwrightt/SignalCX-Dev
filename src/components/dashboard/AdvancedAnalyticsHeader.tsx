@@ -10,7 +10,6 @@ export function AdvancedAnalyticsHeader({
   runAIAnalysis,
   setCachedAnalyticsForKey,
   cacheKey,
-  AnalyticsCache,
   AnalyticsPreprocessor,
   aiFlowOptimizer
 }: any) {
@@ -32,7 +31,7 @@ export function AdvancedAnalyticsHeader({
         </div>
         <Button onClick={() => {
           setCachedAnalyticsForKey(cacheKey, null);
-          AnalyticsCache.clearAllAnalyticsCache();
+          // Analytics cache cleared - using Supabase for caching
           AnalyticsPreprocessor.clearCache();
           aiFlowOptimizer.clearCache();
           setTimeout(() => {

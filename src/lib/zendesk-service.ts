@@ -101,7 +101,12 @@ function generateMockTicket(
   const requester = randomRequesters[index % randomRequesters.length];
   const assignee = mockAgents[index % mockAgents.length];
 
-  const ticket: Ticket = {
+  // Add sentiment based on ticket content/category for realism
+  const sentiments: ('Positive' | 'Neutral' | 'Negative')[] = ['Positive', 'Neutral', 'Negative'];
+  const sentimentIndex = (id + category.length) % sentiments.length;
+  const sentiment = sentiments[sentimentIndex];
+
+  const ticket: Ticket & { sentiment?: 'Positive' | 'Neutral' | 'Negative' } = {
     ...finalTemplate,
     id,
     requester,
@@ -115,6 +120,7 @@ function generateMockTicket(
     conversation,
     sla_breached,
     csat_score,
+    sentiment,
   };
 
   return ticket;

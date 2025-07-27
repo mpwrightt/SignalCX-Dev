@@ -33,21 +33,23 @@ async function initializeDLP(): Promise<void> {
   if (dlpInitialized) return;
   
   try {
-    const dlpModule = await import('@google-cloud/dlp');
-    DlpServiceClient = dlpModule.DlpServiceClient;
-    InfoType = dlpModule.protos.google.privacy.dlp.v2.InfoType;
-    Likelihood = dlpModule.protos.google.privacy.dlp.v2.Likelihood;
-    InspectConfig = dlpModule.protos.google.privacy.dlp.v2.InspectConfig;
-    DeidentifyConfig = dlpModule.protos.google.privacy.dlp.v2.DeidentifyConfig;
-    ReplaceValueConfig = dlpModule.protos.google.privacy.dlp.v2.ReplaceValueConfig;
-    PrimitiveTransformation = dlpModule.protos.google.privacy.dlp.v2.PrimitiveTransformation;
+    // TODO: Install @google-cloud/dlp package for production DLP functionality  
+    // const dlpModule = await import('@google-cloud/dlp');
+    // DlpServiceClient = dlpModule.DlpServiceClient;
+    // InfoType = dlpModule.protos.google.privacy.dlp.v2.InfoType;
+    // Likelihood = dlpModule.protos.google.privacy.dlp.v2.Likelihood;
+    // InspectConfig = dlpModule.protos.google.privacy.dlp.v2.InspectConfig;
+    // DeidentifyConfig = dlpModule.protos.google.privacy.dlp.v2.DeidentifyConfig;
+    // ReplaceValueConfig = dlpModule.protos.google.privacy.dlp.v2.ReplaceValueConfig;
+    // PrimitiveTransformation = dlpModule.protos.google.privacy.dlp.v2.PrimitiveTransformation;
     
     // Only initialize client if we have project ID in environment
     const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || process.env.GCLOUD_PROJECT;
     if (projectId) {
-      dlpClient = new DlpServiceClient();
-      dlpAvailable = true;
-      console.log('[PII Scrubber] Google Cloud DLP API initialized successfully');
+      // dlpClient = new DlpServiceClient();
+      // dlpAvailable = true;
+      dlpAvailable = false; // Temporarily disabled until package is installed
+      console.log('[PII Scrubber] Google Cloud DLP API temporarily disabled - install @google-cloud/dlp package');
     } else {
       console.log('[PII Scrubber] Google Cloud DLP API not configured - using regex fallback');
     }

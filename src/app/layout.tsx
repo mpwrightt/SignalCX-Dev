@@ -42,7 +42,7 @@ export default function RootLayout({
             <DiagnosticsProvider>
               <ThemeProvider
                 attribute="class"
-                defaultTheme="system"
+                defaultTheme="dark"
                 enableSystem
                 disableTransitionOnChange
               >

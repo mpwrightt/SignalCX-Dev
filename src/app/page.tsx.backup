@@ -2251,12 +2251,14 @@ export default function DashboardPage() {
                   )}
                   {mode !== 'users' && mode !== 'agents' && mode !== 'diagnostics' && (
                     <FilterControls
-                      filters={activeFilters}
-                      onFiltersChange={setActiveFilters}
-                      showDrilldown={false}
-                      drilldownFilters={drilldownFilters}
-                      onDrilldownFiltersChange={setDrilldownFilters}
-                      filterOptions={{}}
+                      activeFilters={activeFilters}
+                      setActiveFilters={setActiveFilters}
+                      activeView={activeView}
+                      setActiveView={setActiveView}
+                      availableViews={availableViews}
+                      dateRange={dateRange}
+                      setDateRange={setDateRange}
+                      loading={loading}
                     />
                   )}
                 </div>

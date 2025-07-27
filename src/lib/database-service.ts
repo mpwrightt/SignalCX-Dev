@@ -257,8 +257,7 @@ class DatabaseService {
       lastLoginAt: user.last_login || undefined,
       createdAt: user.created_at,
       updatedAt: user.updated_at,
-      emailVerified: true,
-      firebaseUid: undefined
+      emailVerified: true
     }
   }
 

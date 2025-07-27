@@ -449,8 +449,7 @@ export class TeamService {
       lastLoginAt: user.last_login || undefined,
       createdAt: user.created_at,
       updatedAt: user.updated_at,
-      emailVerified: user.email_verified || true,
-      firebaseUid: undefined
+      emailVerified: user.email_verified || true
     };
   }
 

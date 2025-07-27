@@ -10,9 +10,88 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { createSupabaseBrowserClient } from '@/lib/supabase-config';
 
+// Retry function with exponential backoff for API failures
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000,
+  chunkNumber?: number
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      const isRateLimitOrNetwork = error.message.includes('fetch failed') || 
+                                   error.message.includes('rate limit') ||
+                                   error.message.includes('quota') ||
+                                   error.message.includes('429');
+      
+      if (attempt === maxRetries || !isRateLimitOrNetwork) {
+        throw error;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+      console.log(`[TICKET_GENERATOR] ${chunkNumber ? `Chunk ${chunkNumber}` : 'Request'} failed (attempt ${attempt}/${maxRetries}), retrying in ${Math.round(delay)}ms...`);
+      console.log(`[TICKET_GENERATOR] Error: ${error.message}`);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError!;
+}
+
+// JSON parsing with error recovery for malformed AI responses
+function parseJSONWithRecovery(jsonText: string, chunkNumber: number): any[] {
+  try {
+    // Try standard JSON parsing first
+    return JSON.parse(jsonText);
+  } catch (error) {
+    console.warn(`[TICKET_GENERATOR] JSON parsing failed for chunk ${chunkNumber}, attempting recovery...`);
+    console.log(`[TICKET_GENERATOR] Original JSON (first 500 chars):`, jsonText.substring(0, 500));
+    
+    try {
+      // Common fixes for malformed JSON
+      let fixedJson = jsonText;
+      
+      // Fix trailing commas before closing brackets
+      fixedJson = fixedJson.replace(/,(\s*[}\]])/g, '$1');
+      
+      // Fix missing commas between objects (common AI error)
+      fixedJson = fixedJson.replace(/}\s*{/g, '},{');
+      
+      // Fix incomplete JSON arrays (truncated responses)
+      if (!fixedJson.trim().endsWith(']') && !fixedJson.trim().endsWith('}')) {
+        // If it looks like an array, try to close it
+        if (fixedJson.trim().startsWith('[')) {
+          // Find the last complete object
+          const lastBraceIndex = fixedJson.lastIndexOf('}');
+          if (lastBraceIndex > 0) {
+            fixedJson = fixedJson.substring(0, lastBraceIndex + 1) + ']';
+            console.log(`[TICKET_GENERATOR] Attempted to close truncated array`);
+          }
+        }
+      }
+      
+      console.log(`[TICKET_GENERATOR] Attempting to parse fixed JSON (first 500 chars):`, fixedJson.substring(0, 500));
+      const result = JSON.parse(fixedJson);
+      console.log(`[TICKET_GENERATOR] JSON recovery successful for chunk ${chunkNumber}`);
+      return result;
+      
+    } catch (recoveryError) {
+      console.error(`[TICKET_GENERATOR] JSON recovery failed for chunk ${chunkNumber}:`, recoveryError);
+      console.error(`[TICKET_GENERATOR] Full malformed JSON:`, jsonText);
+      throw new Error(`Unable to parse JSON from AI response in chunk ${chunkNumber}. Original error: ${error.message}`);
+    }
+  }
+}
+
 // Input schema for ticket generation
 const TicketGenerationInputSchema = z.object({
-  count: z.number().min(1).max(100).default(5).describe('Number of tickets to generate'),
+  count: z.number().min(1).max(200).default(5).describe('Number of tickets to generate'),
   group_id: z.number().optional().describe('Support group ID'),
   assignee_id: z.number().optional().describe('Agent ID to assign tickets to'),
   requester_id: z.number().optional().describe('Customer ID requesting support'),
@@ -24,7 +103,8 @@ const TicketGenerationInputSchema = z.object({
   scenario: z.enum(['mixed', 'billing', 'technical', 'shipping', 'refunds', 'account']).default('mixed').describe('Type of support scenarios to generate'),
   urgency_distribution: z.enum(['balanced', 'mostly_normal', 'escalated']).default('balanced').describe('Priority distribution pattern'),
   date_from: z.string().optional().describe('Start date for ticket generation (ISO 8601)'),
-  date_to: z.string().optional().describe('End date for ticket generation (ISO 8601)')
+  date_to: z.string().optional().describe('End date for ticket generation (ISO 8601)'),
+  starting_id: z.number().optional().describe('Starting ticket ID to avoid duplicates')
 });
 
 export type TicketGenerationInput = z.infer<typeof TicketGenerationInputSchema>;
@@ -127,7 +207,7 @@ const ticketGenerationPrompt = ai.definePrompt(
   - Include realistic SLA due dates for urgent/high priority tickets
 
   **FIELD REQUIREMENTS:**
-  - id: Sequential numbers starting from 10001
+  - id: Sequential numbers starting from {{starting_id}} (if provided, otherwise 10001)
   - url: https://company.zendesk.com/api/v2/tickets/{id}.json
   - created_at/updated_at: Timestamps between {{date_from}} and {{date_to}} (if provided), otherwise recent timestamps (last 30 days)
   - requester_id: Customer ID (start from 2001)
@@ -153,30 +233,213 @@ const generateZendeskTicketsFlow = ai.defineFlow(
     const startTime = Date.now();
     
     try {
-      // Generate tickets using AI
-      const response = await ticketGenerationPrompt({
-        count: input.count,
-        scenario: input.scenario,
-        via_channel: input.via_channel,
-        urgency_distribution: input.urgency_distribution,
-        group_id: input.group_id,
-        assignee_id: input.assignee_id,
-        requester_id: input.requester_id,
-        submitter_id: input.submitter_id,
-        tags: input.tags,
-        custom_fields: input.custom_fields,
-        organization_id: input.organization_id,
-        date_from: input.date_from,
-        date_to: input.date_to
-      });
+      // Get the highest existing ticket ID to avoid duplicates
+      const supabase = createSupabaseBrowserClient();
+      const { data: existingTickets } = await supabase
+        .from('generated_tickets')
+        .select('ticket_data')
+        .eq('organization_id', input.organization_id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      let startingId = 10001;
+      if (existingTickets && existingTickets.length > 0) {
+        const lastTicket = existingTickets[0];
+        const lastId = lastTicket.ticket_data?.id || 10000;
+        startingId = lastId + 1;
+        console.log(`[TICKET_GENERATOR] Starting from ID ${startingId} (last ID was ${lastId})`);
+      }
+      
+      // Use chunked generation for reliability with larger batches
+      const CHUNK_SIZE = 8; // Generate max 8 tickets per AI call to avoid token limits
+      const chunks = Math.ceil(input.count / CHUNK_SIZE);
+      const allTickets: any[] = [];
+      let currentStartingId = startingId;
+      
+      console.log(`[TICKET_GENERATOR] Using chunked generation: ${chunks} chunks of max ${CHUNK_SIZE} tickets each`);
+      
+      for (let i = 0; i < chunks; i++) {
+        const remainingTickets = input.count - (i * CHUNK_SIZE);
+        const chunkSize = Math.min(CHUNK_SIZE, remainingTickets);
+        
+        console.log(`[TICKET_GENERATOR] Generating chunk ${i + 1}/${chunks}: ${chunkSize} tickets starting from ID ${currentStartingId}`);
+        
+        // Generate tickets using AI with retry logic
+        const response = await retryWithBackoff(
+          () => ticketGenerationPrompt({
+            count: chunkSize,
+            scenario: input.scenario,
+            via_channel: input.via_channel,
+            urgency_distribution: input.urgency_distribution,
+            group_id: input.group_id,
+            assignee_id: input.assignee_id,
+            requester_id: input.requester_id,
+            submitter_id: input.submitter_id,
+            tags: input.tags,
+            custom_fields: input.custom_fields,
+            organization_id: input.organization_id,
+            date_from: input.date_from,
+            date_to: input.date_to,
+            starting_id: currentStartingId
+          }),
+          3, // maxRetries
+          2000, // baseDelay (2 seconds)
+          i + 1 // chunkNumber for logging
+        );
 
+        // Process this chunk's response
+        let chunkTickets;
+        
+        // Debug: Log the full response structure for troubleshooting
+        console.log(`[TICKET_GENERATOR] Chunk ${i + 1} response type:`, typeof response);
+        console.log(`[TICKET_GENERATOR] Chunk ${i + 1} response keys:`, response ? Object.keys(response) : 'null');
+        console.log(`[TICKET_GENERATOR] Chunk ${i + 1} full response:`, JSON.stringify(response, null, 2));
+        
+        // Handle different response formats from the AI
+        if (response && typeof response === 'object') {
+          if (Array.isArray(response)) {
+            chunkTickets = response;
+            console.log('[TICKET_GENERATOR] AI returned array format');
+          } else if (response.tickets && Array.isArray(response.tickets)) {
+            chunkTickets = response.tickets;
+            console.log('[TICKET_GENERATOR] AI returned object with tickets array');
+          } else if (response.message && response.message.content && Array.isArray(response.message.content)) {
+            // Handle Genkit message format: { message: { content: [{ text: "json..." }] } }
+            try {
+              const content = response.message.content;
+              let jsonText = content[0].text;
+              
+              // Try multiple patterns for markdown code block extraction
+              const patterns = [
+                /```json\n([\s\S]*?)\n```/,  // ```json\n...\n```
+                /```\n([\s\S]*?)\n```/,      // ```\n...\n```
+                /```json([\s\S]*?)```/,      // ```json...```
+                /```([\s\S]*?)```/           // ```...```
+              ];
+              
+              for (const pattern of patterns) {
+                const match = jsonText.match(pattern);
+                if (match) {
+                  jsonText = match[1].trim();
+                  break;
+                }
+              }
+              
+              // Remove any leading/trailing whitespace
+              jsonText = jsonText.trim();
+              
+              // Attempt to parse JSON with error recovery
+              chunkTickets = parseJSONWithRecovery(jsonText, i + 1);
+              console.log('[TICKET_GENERATOR] AI returned Genkit message format, parsed successfully');
+            } catch (parseError) {
+              console.error('[TICKET_GENERATOR] Failed to parse JSON from message content:', parseError);
+              console.error('[TICKET_GENERATOR] Raw content:', response.message.content[0].text);
+              throw new Error(`Failed to parse tickets from chunk ${i + 1}: ${parseError.message}`);
+            }
+          } else if (response.content && Array.isArray(response.content)) {
+            // Handle alternative content format
+            try {
+              const content = response.content;
+              let jsonText = content[0].text;
+              
+              // Clean up the JSON string
+              if (jsonText.startsWith('```json')) {
+                jsonText = jsonText.replace(/```json\s*/, '').replace(/\s*```$/, '');
+              } else if (jsonText.startsWith('```')) {
+                jsonText = jsonText.replace(/```\s*/, '').replace(/\s*```$/, '');
+              }
+              
+              jsonText = jsonText.trim();
+              chunkTickets = parseJSONWithRecovery(jsonText, i + 1);
+              console.log('[TICKET_GENERATOR] AI returned content array format, parsed successfully');
+            } catch (parseError) {
+              console.error('[TICKET_GENERATOR] Failed to parse JSON from content array:', parseError);
+              console.error('[TICKET_GENERATOR] Raw content:', response.content[0].text);
+              throw new Error(`Failed to parse tickets from chunk ${i + 1}: ${parseError.message}`);
+            }
+          } else {
+            console.error('[TICKET_GENERATOR] Unrecognized response structure for chunk', i + 1);
+            console.error('[TICKET_GENERATOR] Response:', response);
+            throw new Error(`AI response missing tickets array in chunk ${i + 1}. Response keys: ${Object.keys(response || {}).join(', ')}`);
+          }
+        } else {
+          console.error('[TICKET_GENERATOR] Invalid response structure:', response);
+          throw new Error(`AI response missing tickets array in chunk ${i + 1}. Response: ${JSON.stringify(response)}`);
+        }
+        
+        if (!chunkTickets || chunkTickets.length === 0) {
+          throw new Error(`AI generated no tickets in chunk ${i + 1}`);
+        }
+        
+        console.log(`[TICKET_GENERATOR] Chunk ${i + 1} generated ${chunkTickets.length} tickets`);
+        allTickets.push(...chunkTickets);
+        
+        // Update starting ID for next chunk
+        const highestIdInChunk = Math.max(...chunkTickets.map(t => t.id || 0));
+        currentStartingId = highestIdInChunk + 1;
+        
+        // Add a small delay between chunks to avoid rate limiting (except for the last chunk)
+        if (i < chunks - 1) {
+          const delayMs = 1000 + Math.random() * 500; // 1-1.5 second delay
+          console.log(`[TICKET_GENERATOR] Waiting ${Math.round(delayMs)}ms before next chunk to avoid rate limiting...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+      
       const generationTime = Date.now() - startTime;
+      console.log(`[TICKET_GENERATOR] All chunks completed. Total tickets generated: ${allTickets.length}`);
       
-      // Debug: Log the AI response structure
-      console.log('[TICKET_GENERATOR] AI Response:', JSON.stringify(response, null, 2));
+      // Check for duplicates against existing database tickets
+      console.log(`[TICKET_GENERATOR] Checking for duplicate ticket IDs in database...`);
+      const generatedIds = allTickets.map(t => t.id).filter(id => id != null);
+      let ticketsToProcess = allTickets;
       
-      // Handle different response formats from the AI
-      let tickets;
+      if (generatedIds.length > 0) {
+        const { data: existingTicketsWithIds } = await supabase
+          .from('generated_tickets')
+          .select('ticket_data')
+          .eq('organization_id', input.organization_id)
+          .in('ticket_data->>id', generatedIds.map(String)); // PostgreSQL JSONB query
+        
+        const existingIds = new Set(
+          (existingTicketsWithIds || [])
+            .map(t => t.ticket_data?.id)
+            .filter(id => id != null)
+        );
+        
+        console.log(`[TICKET_GENERATOR] Found ${existingIds.size} existing ticket IDs that would be duplicates`);
+        
+        // Filter out duplicates
+        const uniqueTickets = allTickets.filter(ticket => {
+          const isDuplicate = existingIds.has(ticket.id);
+          if (isDuplicate) {
+            console.log(`[TICKET_GENERATOR] Filtering out duplicate ticket ID: ${ticket.id}`);
+          }
+          return !isDuplicate;
+        });
+        
+        console.log(`[TICKET_GENERATOR] After duplicate filtering: ${uniqueTickets.length} unique tickets`);
+        
+        if (uniqueTickets.length === 0) {
+          console.warn(`[TICKET_GENERATOR] All generated tickets were duplicates! This suggests the AI is not following the starting_id parameter correctly.`);
+          throw new Error(`All ${allTickets.length} generated tickets were duplicates of existing tickets. Try clearing existing tickets or check AI generation logic.`);
+        }
+        
+        ticketsToProcess = uniqueTickets;
+      } else {
+        console.warn(`[TICKET_GENERATOR] No valid ticket IDs found in generated tickets`);
+      }
+      
+      // Final validation: ensure tickets have required fields
+      const tickets = ticketsToProcess.filter(ticket => {
+        const isValid = ticket && ticket.id && ticket.subject;
+        if (!isValid) {
+          console.warn(`[TICKET_GENERATOR] Filtering out invalid ticket:`, ticket);
+        }
+        return isValid;
+      });
+      
+      console.log(`[TICKET_GENERATOR] Final ticket count after validation: ${tickets.length}`);
       let metadata = {
         total_generated: 0,
         scenarios_used: [input.scenario],
@@ -185,65 +448,9 @@ const generateZendeskTicketsFlow = ai.defineFlow(
         quality_score: 0.95
       };
       
-      // Extract tickets from various possible response formats
-      if (response && response.tickets && Array.isArray(response.tickets)) {
-        // Expected format: { tickets: [...], generation_metadata: {...} }
-        tickets = response.tickets;
-        if (response.generation_metadata) {
-          metadata = { ...metadata, ...response.generation_metadata };
-        }
-      } else if (Array.isArray(response)) {
-        // Direct array format: [ticket1, ticket2, ...]
-        tickets = response;
-        console.log('[TICKET_GENERATOR] AI returned direct array format, converting...');
-      } else if (response && response.message && response.message.content) {
-        // Genkit message format: { message: { content: [{ text: "json..." }] } }
-        const content = response.message.content;
-        if (Array.isArray(content) && content[0] && content[0].text) {
-          try {
-            // Extract JSON from the text content (may be wrapped in ```json or ```)
-            let jsonText = content[0].text;
-            
-            // Try multiple patterns for markdown code block extraction
-            const patterns = [
-              /```json\n([\s\S]*?)\n```/,  // ```json\n...\n```
-              /```\n([\s\S]*?)\n```/,      // ```\n...\n```
-              /```json([\s\S]*?)```/,      // ```json...```
-              /```([\s\S]*?)```/           // ```...```
-            ];
-            
-            for (const pattern of patterns) {
-              const match = jsonText.match(pattern);
-              if (match) {
-                jsonText = match[1].trim();
-                break;
-              }
-            }
-            
-            // Remove any leading/trailing whitespace
-            jsonText = jsonText.trim();
-            
-            tickets = JSON.parse(jsonText);
-            console.log('[TICKET_GENERATOR] AI returned Genkit message format, parsed successfully');
-          } catch (parseError) {
-            console.error('[TICKET_GENERATOR] Failed to parse JSON from message content:', parseError);
-            console.error('[TICKET_GENERATOR] Raw content:', content[0].text);
-            throw new Error('Failed to parse tickets from AI response: ' + parseError.message);
-          }
-        }
-      } else {
-        console.error('[TICKET_GENERATOR] Invalid response structure:', response);
-        throw new Error('AI response missing tickets array. Response: ' + JSON.stringify(response));
-      }
-      
-      if (!tickets || tickets.length === 0) {
-        throw new Error('AI generated no tickets');
-      }
-      
       metadata.total_generated = tickets.length;
       
-      // Store tickets in Supabase
-      const supabase = createSupabaseBrowserClient();
+      // Store tickets in Supabase (reuse the supabase client from above)
       const ticketsToStore = tickets.map(ticket => ({
         organization_id: input.organization_id,
         ticket_data: ticket,

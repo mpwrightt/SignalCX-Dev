@@ -28,16 +28,16 @@ function convertStoredTicketToTicket(storedTicket: StoredTicket): Ticket {
     assignee: `Agent ${zendeskTicket.assignee_id}`,
     description: zendeskTicket.description || '',
     created_at: zendeskTicket.created_at,
-    first_response_at: null, // Generated tickets don't have response times yet
-    solved_at: zendeskTicket.status === 'solved' ? zendeskTicket.updated_at : null,
+    first_response_at: undefined, // Generated tickets don't have response times yet
+    solved_at: zendeskTicket.status === 'solved' ? zendeskTicket.updated_at : undefined,
     status: zendeskTicket.status === 'hold' ? 'on-hold' : zendeskTicket.status as any,
-    priority: zendeskTicket.priority || 'normal',
+    priority: zendeskTicket.priority as 'urgent' | 'high' | 'normal' | 'low' || 'normal',
     tags: zendeskTicket.tags || [],
     view: 'Generated Data',
     category: storedTicket.scenario,
     conversation: [], // Generated tickets don't have conversations yet
     sla_breached: false, // Could calculate this based on created_at and priority
-    csat_score: null // Generated tickets don't have CSAT scores yet
+    csat_score: undefined // Generated tickets don't have CSAT scores yet
   };
 }
 

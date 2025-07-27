@@ -33,8 +33,7 @@ async function createUserFromSupabaseAuth(supabaseUser: any): Promise<Authentica
       organizationId: '00000000-0000-0000-0000-000000000001', // Default organization
       permissions: getRolePermissions(role),
       isActive: true,
-      emailVerified: !!supabaseUser.email_confirmed_at,
-      firebaseUid: undefined
+      emailVerified: !!supabaseUser.email_confirmed_at
     }
 
     // Create user via Supabase service
@@ -329,9 +328,8 @@ async function getOrCreateUserProfile(supabaseUser: any): Promise<AuthenticatedU
       organizationName,
       permissions: getRolePermissions(role),
       isActive: !!invitation || isBootstrapAdmin,
-      emailVerified: supabaseUser.email_confirmed_at ? true : false,
-      invitedBy: invitation?.invitedBy,
-      firebaseUid: undefined
+      emailVerified: !!supabaseUser.email_confirmed_at,
+      invitedBy: invitation?.invitedBy
     }
     
     // Use Supabase service to create user

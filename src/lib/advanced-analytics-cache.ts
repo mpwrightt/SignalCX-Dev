@@ -127,6 +127,21 @@ export function setStoredStartTime(startTime: number | null): void {
   }
 }
 
+// Agent-specific cache utilities
+export class AnalyticsCache {
+  static getCachedAgentAnalysis(agentName: string, type: string, ticketHash: string): any {
+    if (typeof window === 'undefined') return null;
+    const key = `agent-${agentName}-${type}-${ticketHash}`;
+    return getCachedAnalyticsForKey(key);
+  }
+
+  static setCachedAgentAnalysis(agentName: string, type: string, data: any, ticketHash: string): void {
+    if (typeof window === 'undefined') return;
+    const key = `agent-${agentName}-${type}-${ticketHash}`;
+    setCachedAnalyticsForKey(key, data);
+  }
+}
+
 // Risk level color helper
 export function getRiskLevelColor(level: string): string {
   switch (level) {

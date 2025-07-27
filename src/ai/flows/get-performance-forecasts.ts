@@ -12,17 +12,31 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import type { ProcessedAnalyticsData } from '@/lib/analytics-preprocessor';
 import { AnalyticsPreprocessor } from '@/lib/analytics-preprocessor';
+import { AnalyticsCache } from '@/lib/advanced-analytics-cache';
 
 const AnalyzedTicketForForecastSchema = z.object({
   id: z.number(),
+  subject: z.string(),
+  requester: z.string(),
   assignee: z.string().optional(),
+  description: z.string(),
   category: z.string(),
   sentiment: z.enum(['Positive', 'Neutral', 'Negative']).optional(),
   csat_score: z.number().optional(),
   created_at: z.string(),
+  first_response_at: z.string().optional(),
   solved_at: z.string().optional(),
-  status: z.string(),
-  priority: z.string().nullable(),
+  status: z.enum(['new', 'open', 'pending', 'on-hold', 'solved', 'closed']),
+  priority: z.enum(['urgent', 'high', 'normal', 'low']).nullable(),
+  tags: z.array(z.string()),
+  view: z.string(),
+  conversation: z.array(z.object({
+    sender: z.enum(['customer', 'agent']),
+    message: z.string(),
+    timestamp: z.string(),
+  })),
+  sla_breached: z.boolean(),
+  organizationId: z.string().optional(),
 });
 
 const GetPerformanceForecastsInputSchema = z.object({
@@ -164,7 +178,7 @@ const getPerformanceForecastsFlow = ai.defineFlow(
             tickets: agentTickets.map(ticket => ({
               id: ticket.id,
               category: ticket.category,
-              sentiment: ticket.sentiment || 'Neutral',
+              sentiment: (ticket as any).sentiment || 'Neutral',
               csat_score: ticket.csat_score,
               created_at: ticket.created_at,
               solved_at: ticket.solved_at,

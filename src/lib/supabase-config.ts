@@ -27,7 +27,7 @@ export function createSupabaseBrowserClient() {
   }
   
   if (!browserClient) {
-    browserClient = createBrowserClient(supabaseUrl, supabaseAnonKey)
+    browserClient = createBrowserClient(supabaseUrl!, supabaseAnonKey!)
   }
   return browserClient
 }

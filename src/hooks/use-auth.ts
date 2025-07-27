@@ -8,7 +8,7 @@ import {
   signOut as firebaseSignOut,
   loginDemo,
   onAuthStateChange
-} from '@/lib/auth-service';
+} from '@/lib/auth-service-enhanced';
 import { useRouter } from 'next/navigation';
 import { logAuditEvent, logSecurityEvent } from '@/lib/audit-service';
 
@@ -51,32 +51,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
         
-        // Set up Firebase auth state listener for enterprise mode
-        const unsubscribe = onAuthStateChange(async (firebaseUser) => {
-          if (firebaseUser) {
+        // Set up Supabase auth state listener for enterprise mode
+        const unsubscribe = onAuthStateChange(async (supabaseUser) => {
+          if (supabaseUser) {
             try {
-              const userProfile = await getUserById(firebaseUser.uid);
-              if (userProfile) {
-                setUser(userProfile);
-                setSessionMode('enterprise');
-                
-                // Enhanced login audit with security metadata
-                await logAuditEvent(
-                  userProfile, 
-                  'USER_LOGIN', 
-                  {
-                    sessionId: firebaseUser.uid,
-                    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
-                    success: true,
-                    dataSensitivity: 'confidential'
-                  },
-                  { 
-                    mode: 'enterprise',
-                    authProvider: 'firebase',
-                    emailVerified: firebaseUser.emailVerified,
-                    lastLoginAt: firebaseUser.metadata.lastSignInTime,
-                    accountCreated: firebaseUser.metadata.creationTime
-                  },
+              setUser(supabaseUser);
+              setSessionMode('enterprise');
+              
+              // Enhanced login audit with security metadata
+              await logAuditEvent(
+                supabaseUser, 
+                'USER_LOGIN', 
+                {
+                  sessionId: supabaseUser.id,
+                  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+                  success: true,
+                  dataSensitivity: 'confidential'
+                },
+                { 
+                  mode: 'enterprise',
+                  authProvider: 'supabase',
+                  emailVerified: supabaseUser.emailVerified,
+                  lastLoginAt: supabaseUser.lastLoginAt,
+                  accountCreated: supabaseUser.createdAt
+                },
                   {
                     source: 'web',
                     dataSensitivity: 'confidential'
@@ -84,14 +82,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 );
 
                 // Check for suspicious login patterns
-                if (userProfile.lastLoginAt) {
-                  const lastLogin = new Date(userProfile.lastLoginAt);
+                if (supabaseUser.lastLoginAt) {
+                  const lastLogin = new Date(supabaseUser.lastLoginAt);
                   const timeSinceLastLogin = Date.now() - lastLogin.getTime();
                   const oneWeek = 7 * 24 * 60 * 60 * 1000;
                   
                   if (timeSinceLastLogin > oneWeek) {
                     await logSecurityEvent(
-                      userProfile,
+                      supabaseUser,
                       'SUSPICIOUS_ACTIVITY_DETECTED',
                       {
                         threatLevel: 'low',
@@ -104,19 +102,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     );
                   }
                 }
-              } else {
-                // User exists in Firebase but not in our system
-                await logSecurityEvent(
-                  null,
-                  'UNAUTHORIZED_ACCESS_ATTEMPT',
-                  {
-                    threatLevel: 'medium',
-                    violationType: 'orphaned_firebase_user',
-                    resourceAttempted: 'user_profile',
-                    additionalContext: { firebaseUid: firebaseUser.uid }
-                  }
-                );
-              }
             } catch (error) {
               console.error('Error fetching user profile:', error);
               
