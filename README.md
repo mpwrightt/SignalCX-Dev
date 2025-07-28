@@ -7,7 +7,7 @@ SignalCX is a comprehensive web application that transforms support ticket data 
 ![SignalCX Dashboard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 ![Next.js](https://img.shields.io/badge/Next.js-15.3.3-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
-![Firebase](https://img.shields.io/badge/Firebase-10.14.1-orange)
+
 
 ## ✨ Key Features
 
@@ -35,14 +35,14 @@ SignalCX is a comprehensive web application that transforms support ticket data 
 ### 🔧 Integration & Automation
 - **Zendesk Integration** - Direct API connection for live data
 - **Google AI & Genkit** - Advanced AI model integration
-- **Firebase Backend** - Scalable cloud infrastructure
+
 - **Email Automation** - Automated notifications and invitations
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+ 
-- Firebase account
+
 - Google AI API key
 - Gmail account (for SMTP)
 
@@ -69,10 +69,7 @@ SignalCX is a comprehensive web application that transforms support ticket data 
    # Required - Google AI API Key
    GOOGLE_API_KEY=your_google_ai_key
    
-   # Firebase Configuration
-   NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   
    
    # Email Configuration (for invitations)
    SMTP_EMAIL=your-email@gmail.com
@@ -82,10 +79,7 @@ SignalCX is a comprehensive web application that transforms support ticket data 
    NEXT_PUBLIC_BOOTSTRAP_ADMIN_EMAIL=admin@yourcompany.com
    ```
 
-4. **Firebase Setup**
-   - Enable Firestore Database
-   - Enable Google Authentication
-   - Deploy security rules: `firebase deploy --only firestore:rules`
+
 
 5. **Start Development Servers**
    ```bash
@@ -105,7 +99,7 @@ SignalCX is a comprehensive web application that transforms support ticket data 
 ### Tech Stack
 - **Frontend**: Next.js 15.3.3 with TypeScript
 - **AI/ML**: Google AI, Genkit, LangChain
-- **Backend**: Firebase (Firestore, Authentication, Functions)
+
 - **UI**: ShadCN UI components with Tailwind CSS
 - **Charts**: Recharts for data visualization
 - **Email**: Nodemailer with Gmail SMTP
@@ -135,12 +129,12 @@ src/
 
 ### Authentication Flow
 1. **Google OAuth** - Secure sign-in with Google accounts
-2. **Firebase Auth** - User session management
+
 3. **Role-Based Access** - Granular permission system
 4. **Organization Scoping** - Multi-tenant data isolation
 
 ### Security Features
-- **Firestore Rules** - Database-level security
+
 - **PII Scrubbing** - Automatic sensitive data removal
 - **Audit Logging** - Complete activity tracking
 - **Session Management** - Secure token handling
@@ -193,16 +187,16 @@ npm run test         # Run Jest tests
 ## 🚢 Deployment
 
 ### Production Checklist
-- [ ] Configure production Firebase project
+
 - [ ] Set up environment variables
-- [ ] Deploy Firestore rules and indexes
+
 - [ ] Configure email SMTP settings
 - [ ] Set up monitoring and logging
 - [ ] Run security audit
 
 ### Deployment Options
 - **Vercel** - Recommended for Next.js applications
-- **Firebase Hosting** - Integrated with Firebase backend
+
 - **Custom Server** - Docker containerization support
 
 ## 📝 Team Management
@@ -225,13 +219,12 @@ npm run test         # Run Jest tests
 ### Environment Variables
 See `.env.example` for complete configuration options including:
 - AI API keys (Google, Anthropic, OpenAI)
-- Firebase configuration
+
 - Zendesk integration settings
 - Email SMTP configuration
 - Application URLs and settings
 
-### Firebase Configuration
-- **Firestore** - Document database for user data
+
 - **Authentication** - Google OAuth integration  
 - **Security Rules** - Role-based data access
 - **Indexes** - Optimized query performance
@@ -266,4 +259,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**SignalCX** - Transforming support data into business intelligence 🚀
+**SignalCX** - Transforming support data into business intelligence 🚀# SignalCX-Dev
