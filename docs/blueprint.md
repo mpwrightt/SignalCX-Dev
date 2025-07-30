@@ -2,8 +2,8 @@
 
 ## Core Features:
 
-- User Authentication: Secure authentication using Firebase Authentication.
-- Zendesk Integration: Pull tickets from Zendesk API using a specified view ID. This operation occurs in Firebase Cloud Functions for security.
+- User Authentication: Secure authentication.
+- Zendesk Integration: Pull tickets from Zendesk API using a specified view ID. This operation occurs in Cloud Functions for security.
 - Sentiment Analysis: Send ticket data to OpenAI's GPT API via a tool function for sentiment analysis (positive, neutral, negative).
 - Issue Categorization: Categorize the issue (e.g., login, billing, shipping) by prompting OpenAI's GPT API via a tool function.
 - Ticket Summarization: Generate a concise one-sentence summary and a paragraph-length detailed analysis using OpenAI.

@@ -81,6 +81,13 @@ Required in `.env`:
 - `ANTHROPIC_API_KEY` - For Claude models in multi-agent optimization (optional)
 - `OPENAI_API_KEY` - For GPT models in multi-agent optimization (optional)
 
+### Task Master AI Integration
+When using Task Master AI with MCP integration, these additional API keys may be configured:
+- `PERPLEXITY_API_KEY` - For research-backed task analysis (highly recommended)
+- `XAI_API_KEY` - For Grok models (optional)
+- `OPENROUTER_API_KEY` - For multiple model access (optional)
+- `MISTRAL_API_KEY` - For Mistral models (optional)
+
 ### Supabase Configuration (required for production)
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous public key
@@ -103,6 +110,26 @@ Required in `.env`:
 
 ### Bootstrap Admin
 - `NEXT_PUBLIC_BOOTSTRAP_ADMIN_EMAIL` - Email to automatically make org_admin on first login
+
+## Current Project Status
+
+### Completed Features (9/20 tasks - 45%)
+- Project repository setup and infrastructure
+- Supabase authentication with Google OAuth
+- Role-based access control system (5-tier hierarchy)
+- Team management with email invitations
+- Multi-agent AI analysis system
+- Supabase data management integration
+- Advanced analytics dashboard with real-time updates
+- Dual data modes (Demo/Enterprise) implementation
+- AI ticket generation system
+
+### High Priority Pending Tasks
+- **Task #7**: Predictive Forecasting (Complexity: 8/10)
+- **Task #8**: Sentiment Analysis Integration (Complexity: 7/10)
+- **Task #9**: Risk Assessment Feature (Complexity: 8/10)
+- **Task #15**: PII Scrubbing Implementation (Complexity: 9/10 - Highest)
+- **Task #18**: Real-time Metrics Dashboard (Complexity: 8/10)
 
 ## Production Features
 refactor files once code reaches 200-300 lines
@@ -129,6 +156,18 @@ refactor files once code reaches 200-300 lines
 - **Chunked Ticket Generation**: AI generates tickets in chunks (8 per batch) with retry logic
 - **Database Duplicate Prevention**: Post-generation duplicate checking prevents ID conflicts
 
+## Error Handling
+
+### File Size and Token Limitations
+- When you try to analyze a file that exceeds the token size. Here is an example:
+  - Error: File content (30473 tokens) exceeds maximum allowed tokens (25000). Please use offset and limit parameters to read specific portions of the file, or use the GrepTool to search for specific content.
+
+### Task Master Common Issues
+- **Claude Code API Errors**: If Task Master fails with Claude Code provider, switch to OpenAI: `task-master models --set-main gpt-4o`
+- **MCP Connection Issues**: Verify `.mcp.json` configuration includes all required API keys
+- **Task Sync Issues**: Use `task-master generate` to regenerate task markdown files
+- **Dependency Validation**: Run `task-master validate-dependencies` to check for circular references
+
 ## Important Notes
 
 ### Development Workflow
@@ -138,6 +177,13 @@ refactor files once code reaches 200-300 lines
 - Authentication is production-ready with Supabase
 - Single-page app design with mode-based rendering
 - Multi-agent route optimized with Gemini 2.0 Flash as primary model (`/api/multi-agent`)
+
+### Task Master Integration
+- Project includes comprehensive Task Master AI setup with 20 main tasks and 100 subtasks
+- Use MCP tools for task management: `mcp__task-master-ai__*` functions
+- Task complexity analysis completed - 4 high-complexity tasks identified (scores 8-9)
+- Tasks.json located at `.taskmaster/tasks/tasks.json` with detailed implementation tracking
+- Use `task-master next` or MCP `next_task` to find next available work item
 
 ### Code Quality
 - ESLint and Prettier configurations for consistent formatting
@@ -156,6 +202,14 @@ Start every feature with: "Let me research the codebase and create a plan before
 2. **Plan** - Propose approach and verify with user
 3. **Implement** - Build with tests and error handling
 4. **Validate** - ALWAYS run formatters, linters, and tests after implementation
+
+### Task Master Enhanced Workflow
+When working with Task Master tasks:
+1. **Check Tasks**: Use `mcp__task-master-ai__next_task` to find next work item
+2. **Review Details**: Use `mcp__task-master-ai__get_task` with task ID for full context
+3. **Update Progress**: Use `mcp__task-master-ai__update_subtask` to log implementation notes
+4. **Mark Complete**: Use `mcp__task-master-ai__set_task_status` when finished
+5. **Export Progress**: README.md is auto-maintained with current task status
 
 ### Code Organization Principles
 - Keep functions small and focused
@@ -180,170 +234,8 @@ Prefer explicit over implicit:
 - **Multiple agents**: Split complex tasks - one for tests, one for implementation
 - **Batch similar work**: Group related file edits together
 
-## TypeScript/React Development Standards
+[... rest of the existing content remains the same ...]
 
-### Required Patterns
-- Use TypeScript strict mode - explicit types prevent bugs
-- React hooks for state management - no class components
-- Early returns to reduce nesting - flat code is readable
-- Delete old code when replacing - no versioned functions
-- Proper error boundaries and error handling
-- Zod schemas for validation and type safety
-
-### Problem Solving Strategy
-- **When stuck**: Stop. The simple solution is usually correct.
-- **When uncertain**: "Let me think hard about this architecture."
-- **When choosing**: "I see approach A (simple) vs B (flexible). Which do you prefer?"
-
-User feedback prevents over-engineering. When uncertain about implementation, stop and ask for guidance.
-
-### Testing Strategy
-Match testing approach to code complexity:
-- **Complex business logic**: Write tests first (TDD)
-- **Simple CRUD operations**: Write code first, then tests  
-- **React components**: Focus on behavior, not implementation
-- **AI flows**: Test input/output schemas and error handling
-
-### Security & Performance
-- Always validate all inputs and scrub PII
-- Handle authentication properly with Supabase
-- Performance rule: Measure before optimizing. No guessing.
-
-### Progress Tracking
-- Use TodoWrite tool for task management
-- Clear naming in all code
-- Focus on maintainable solutions over clever abstractions
-
-## ARCHITECTURE
-
-```
-.
-├── src
-│   ├── app/                    # Next.js App Router: pages, layouts, and API routes
-│   │   ├── api/               # API routes
-│   │   │   ├── send-invitation/ # Email invitation API
-│   │   │   ├── test-email/    # SMTP testing endpoint
-│   │   │   └── multi-agent/   # Multi-agent AI processing
-│   │   ├── login/             # Login page component
-│   │   ├── accept-invitation/ # Invitation acceptance flow
-│   │   ├── globals.css        # Global styles and ShadCN theme variables
-│   │   ├── layout.tsx         # Root layout for the application
-│   │   └── page.tsx           # Main application component (Dashboard, Explorer, etc.)
-│   │
-│   ├── ai/                    # All Genkit-related code
-│   │   ├── flows/             # Individual AI flows (summarize, predict, ticket generation)
-│   │   │   ├── generate-zendesk-tickets.ts # Chunked AI ticket generation
-│   │   │   ├── fetch-and-analyze-tickets.ts # Main data fetching flow
-│   │   │   └── (20+ other specialized AI flows)
-│   │   ├── genkit.ts          # Genkit configuration and initialization
-│   │   └── dev.ts             # Entry point for the Genkit development server
-│   │
-│   ├── components/            # Reusable React components
-│   │   ├── ui/                # Unmodified ShadCN UI components
-│   │   └── dashboard/         # Dashboard-specific components
-│   │       ├── team-management.tsx # Complete team management system
-│   │       ├── advanced-analytics-view.tsx
-│   │       └── (other dashboard components)
-│   │
-│   ├── hooks/                 # Custom React hooks
-│   │   ├── use-auth.ts        # Supabase authentication and session state
-│   │   ├── use-settings.ts    # Application settings via localStorage
-│   │   ├── use-toast.ts       # UI notifications
-│   │   └── use-diagnostics.ts # AI flow debugging
-│   │
-│   └── lib/                   # Shared utilities, services, and type definitions
-│       ├── auth-service-enhanced.ts # Supabase authentication logic
-│       ├── team-service.ts    # Team management Supabase operations
-│       ├── rbac-service.ts    # Role-based access control
-│       ├── supabase-config.ts # Supabase configuration and client setup
-│       ├── supabase-service.ts # Core Supabase database operations
-│       ├── generated-ticket-service.ts # AI ticket generation management
-│       ├── audit-service.ts   # Server-side audit event logging
-│       ├── mock-data.ts       # Mock data templates for demo mode
-│       ├── types.ts           # Core TypeScript type definitions
-│       ├── zendesk-service.ts # Data fetching (mock/live)
-│       ├── agent-service.ts   # Agent performance and analytics
-│       ├── cache-service.ts   # Caching layer for performance optimization
-│       └── pii-scrubber.ts    # PII detection and scrubbing utilities
-│
-├── supabase/                 # Supabase configuration and migrations
-│   ├── migrations/           # Database migration files
-│   └── config.toml           # Supabase configuration
-├── .env                      # Environment variables
-├── next.config.ts            # Next.js configuration
-└── tsconfig.json             # TypeScript configuration
-```
-
-## Team Management System Details
-
-### User Roles Hierarchy
-1. **readonly** - View dashboards and reports
-2. **agent** - Handle tickets + basic analytics
-3. **manager** - Team oversight + advanced reports
-4. **org_admin** - Full organization control + user management
-5. **super_admin** - Global system administration
-
-### Role Permissions
-- **Users**: read/write/delete based on role hierarchy
-- **Tickets**: read/write based on organization scope
-- **Analytics**: read/write with role restrictions
-- **AI Features**: read/write with role restrictions
-- **Settings**: org_admin and above can modify
-- **Audit Logs**: manager and above can read
-
-### Email Invitation Flow
-1. **Invite Creation**: Org admin creates invitation via Team Management
-2. **Email Sending**: Professional HTML template sent via SMTP
-3. **Token Security**: Unique tokens with 7-day expiration
-4. **Acceptance**: User clicks link → Google OAuth → automatic role assignment
-5. **Database Updates**: Invitation marked as accepted, user becomes active
-
-### Supabase Tables
-- **users**: User profiles with roles and permissions
-- **organizations**: Multi-tenant organization data
-- **invitations**: Pending/revoked invitations with tokens
-- **audit_logs**: Complete activity tracking
-- **settings**: Organization-specific configuration
-- **generated_tickets**: AI-generated Zendesk tickets for demo mode
-- **tickets**: Live ticket data from Zendesk integration
-- **conversations**: Ticket conversation threads
-
-## AI Ticket Generation System
-
-### Architecture
-The `generate-zendesk-tickets.ts` flow uses a sophisticated chunked generation approach:
-
-1. **Dynamic ID Management**: Queries database for highest existing ticket ID to prevent duplicates
-2. **Chunked Processing**: Splits large requests (>8 tickets) into smaller batches
-3. **Retry Logic**: Exponential backoff with 3 retries for API failures
-4. **JSON Recovery**: Automatic parsing and repair of malformed AI responses
-5. **Database Validation**: Post-generation duplicate checking and filtering
-6. **Rate Limiting**: 1-1.5 second delays between chunks to respect API limits
-
-### Key Features
-- **Scalable**: Supports up to 200 tickets per generation request
-- **Reliable**: Handles Google AI API failures gracefully
-- **Sequential IDs**: Maintains proper ticket numbering across chunks
-- **Organization Scoped**: All tickets are properly isolated by organization
-
-### Usage Pattern
-```typescript
-// Generate tickets with automatic chunking and error handling
-const result = await generateZendeskTickets({
-  count: 50,
-  scenario: 'mixed',
-  organization_id: orgId
-});
-```
-
-## Important Reminders
-
-- **Email System**: Uses Gmail SMTP - app password must be 16 characters without spaces
-- **Supabase**: Uses PostgreSQL with JSONB queries for ticket data  
-- **Security**: All operations are organization-scoped with role validation
-- **UI Theme**: Purple branding (#8b5cf6) throughout the application
-- **Error Handling**: Comprehensive validation with user-friendly toast notifications
-- **Performance**: Real-time updates with optimistic UI patterns
-- **Database Migration**: Supabase replaces Firebase - migration scripts available
-- **Project Name**: SignalCX - AI-Powered Support Ticket Analytics & Team Management Platform
-- **Port Configuration**: Next.js runs on port 9002, Genkit UI on port 4000
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md

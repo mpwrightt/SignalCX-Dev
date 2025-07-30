@@ -47,7 +47,7 @@ CREATE TABLE users (
     department TEXT,
     is_active BOOLEAN DEFAULT true,
     email_verified BOOLEAN DEFAULT false,
-    firebase_uid TEXT, -- For Firebase auth compatibility
+    
     invited_by UUID REFERENCES users(id),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),

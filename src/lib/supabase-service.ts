@@ -64,7 +64,7 @@ class SupabaseService {
           organization_id: user.organizationId || await this.getOrCreateDefaultOrganization(),
           is_active: user.isActive ?? true,
           email_verified: user.emailVerified ?? true,
-          firebase_uid: null // No Firebase integration
+          
         })
         .select()
         .single()

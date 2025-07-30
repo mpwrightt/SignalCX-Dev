@@ -418,9 +418,11 @@ export default function DashboardPage() {
         };
       };
 
+      const preprocessedData = AnalyticsPreprocessor.preprocess(openAnalyzedTickets);
+
       // Safely prepare coaching input with guaranteed sentiment and category
       const coachingInput = { 
-        tickets: openAnalyzedTickets.map(ticket => {
+        tickets: preprocessedData.sampledData.representativeSample.map(ticket => {
           const analysis = getTicketAnalysis(ticket);
           return {
             id: ticket.id,
@@ -567,6 +569,16 @@ export default function DashboardPage() {
       setPrediction(finalPrediction);
       setLocalCachedData(PREDICTIVE_CACHE_KEY, finalPrediction);
 
+      // Also update the advanced analytics state
+      if (mode === 'advanced-analytics') {
+        const { setPerformanceForecasts, setBurnoutIndicators, setKnowledgeGaps, setSlaPrediction, setHolisticAnalysis } = require('@/components/dashboard/analytics-state-management');
+        setPerformanceForecasts(performanceResult.forecasts || []);
+        setBurnoutIndicators(coachingResult.insights || []);
+        setKnowledgeGaps(clusteringResult.clusters || []);
+        setSlaPrediction(riskResult || null);
+        setHolisticAnalysis(holisticResult || null);
+      }
+
       setIsDeepAnalyzed(true);
 
       toast({ title: "Full Analysis Complete!", description: "All AI insights have been generated and cached." });
@@ -641,6 +653,8 @@ export default function DashboardPage() {
 
       setAnalysisProgress(10);
 
+      const preprocessedData = AnalyticsPreprocessor.preprocess(tickets);
+
       const response = await fetch('/api/multi-agent-diagnostic', {
         method: 'POST',
         headers: {
@@ -701,6 +715,16 @@ export default function DashboardPage() {
 
         setPrediction(predictiveAnalysis);
         setLocalCachedData(PREDICTIVE_CACHE_KEY, predictiveAnalysis);
+
+        // Also update the advanced analytics state
+        if (mode === 'advanced-analytics') {
+          const { setPerformanceForecasts, setBurnoutIndicators, setKnowledgeGaps, setSlaPrediction, setHolisticAnalysis } = require('@/components/dashboard/analytics-state-management');
+          setPerformanceForecasts(result.results.getPerformanceForecasts?.result?.forecasts || []);
+          setBurnoutIndicators(result.results.getCoachingInsights?.result?.insights || []);
+          setKnowledgeGaps(result.results.clusterTickets?.result?.clusters || []);
+          setSlaPrediction(result.results.getSlaPrediction?.result || null);
+          setHolisticAnalysis(result.results.getHolisticAnalysis?.result || null);
+        }
       }
 
       // Log the comprehensive result
@@ -936,44 +960,12 @@ export default function DashboardPage() {
         console.log('Multi-agent result structure:', result.result);
         
         // Create mock data for testing when agents return output strings
-        const mockForecasts = [
-          {
-            date: new Date().toISOString().split('T')[0],
-            forecastValue: 150,
-            confidence: 0.85,
-            type: 'volume' as const,
-            agentName: 'Agent A',
-            currentPerformance: 140,
-            targetPerformance: 160
-          }
-        ];
-
-        const mockBurnoutIndicators = [
-          {
-            agentName: 'Agent A',
-            riskLevel: 'medium' as const,
-            indicators: ['High ticket volume', 'Long resolution times'],
-            ticketCount: 45,
-            avgResolutionTime: 4.5,
-            lastActivity: new Date().toISOString()
-          }
-        ];
-
-        const mockKnowledgeGaps = [
-          {
-            topic: 'Payment Processing',
-            affectedTickets: 12,
-            agents: ['Agent A', 'Agent B'],
-            impact: 'High',
-            priority: 'high' as const,
-            recommendedTraining: ['Payment Security', 'Fraud Detection']
-          }
-        ];
+        
 
         // Combine all predictive analysis results
         const predictiveAnalysis: PredictiveAnalysisOutput = {
           // Required fields for PredictiveAnalysisOutput
-          forecast: result.result.performance?.forecasts || mockForecasts,
+          forecast: result.result.performance?.forecasts || [],
           overallAnalysis: result.result.performance?.holisticAnalysis?.overallAnalysis || result.result.performance?.output || 'Analysis completed successfully',
           agentTriageSummary: result.result.performance?.holisticAnalysis?.agentTriageSummary || 'Agent performance analyzed',
           categoryTrends: result.result.discovery?.trends || [],
@@ -987,8 +979,8 @@ export default function DashboardPage() {
 
         // Store additional analytics data separately
         const analyticsData = {
-          burnoutIndicators: result.result.risk?.burnoutIndicators || mockBurnoutIndicators,
-          knowledgeGaps: result.result.coaching?.knowledgeGaps || mockKnowledgeGaps
+          burnoutIndicators: result.result.risk?.burnoutIndicators || [],
+          knowledgeGaps: result.result.coaching?.knowledgeGaps || []
         };
 
         setPrediction(predictiveAnalysis);
@@ -2313,12 +2305,20 @@ export default function DashboardPage() {
                 <DiagnosticsView />
               ) : mode === 'advanced-analytics' ? (
                 <AdvancedAnalyticsView 
-                  sessionMode={sessionMode} 
-                  tickets={dashboardFilteredTickets} 
-                  historicalVolume={ticketVolumeData}
-                  forecastDays={settings.forecastDays}
-                  prediction={prediction}
-                />
+            tickets={dashboardFilteredTickets}
+            dateRange={dateRange}
+            loading={loading}
+            performanceForecasts={performanceForecasts}
+            burnoutIndicators={coachingInsights}
+            knowledgeGaps={ticketClusters}
+            slaPrediction={prediction}
+            holisticAnalysis={prediction}
+            setPerformanceForecasts={setPerformanceForecasts}
+            setBurnoutIndicators={setCoachingInsights}
+            setKnowledgeGaps={setTicketClusters}
+            setSlaPrediction={setPrediction}
+            setHolisticAnalysis={setPrediction}
+          />
               ) : mode === 'ticket-generator' ? (
                 <TicketGenerator />
               ) : mode === 'team-management' ? (

@@ -62,7 +62,7 @@ class DatabaseService {
           role: user.role || 'readonly',
           organization_id: user.organizationId!,
           is_active: user.isActive ?? true,
-          firebase_uid: null
+          
         })
         .select()
         .single()

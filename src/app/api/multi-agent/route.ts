@@ -167,11 +167,15 @@ export async function POST(req: NextRequest) {
     const coachingStartTime = PerformanceTracker.startTimer('coaching', 'claude-3.5-sonnet');
     const sentimentStartTime = PerformanceTracker.startTimer('sentiment', 'gemini-2.0-flash');
     
+    const half = Math.ceil(tickets.length / 2);
+    const firstHalf = tickets.slice(0, half);
+    const secondHalf = tickets.slice(half);
+
     const [performanceResult, riskResult, coachingResult, sentimentResult] = await Promise.allSettled([
-      performanceAgent.call({ ...agentInput, input: 'You are a Performance Analyst. Focus on forecasting, benchmarking, and identifying improvement opportunities.\n' + agentInput.input }),
-      riskAgent.call({ ...agentInput, input: 'You are a Risk Analyst. Identify SLA risks, compliance issues, and burnout.\n' + agentInput.input }),
-      coachingAgent.call({ ...agentInput, input: 'You are a Coaching Analyst. Generate actionable coaching and quality insights.\n' + agentInput.input }),
-      sentimentAgent.call({ ...agentInput, input: 'You are a Sentiment Analyst. Analyze ticket sentiment and categorize issues.\n' + agentInput.input }),
+      performanceAgent.call({ ...agentInput, tickets: firstHalf, input: 'You are a Performance Analyst. Focus on forecasting, benchmarking, and identifying improvement opportunities.\n' + agentInput.input }),
+      riskAgent.call({ ...agentInput, tickets: secondHalf, input: 'You are a Risk Analyst. Identify SLA risks, compliance issues, and burnout.\n' + agentInput.input }),
+      coachingAgent.call({ ...agentInput, tickets: firstHalf, input: 'You are a Coaching Analyst. Generate actionable coaching and quality insights.\n' + agentInput.input }),
+      sentimentAgent.call({ ...agentInput, tickets: secondHalf, input: 'You are a Sentiment Analyst. Analyze ticket sentiment and categorize issues.\n' + agentInput.input }),
     ]);
     
     // Record metrics for parallel agents

@@ -1,0 +1,236 @@
+# SignalCX: Product Requirements Document (PRD)
+
+**Version:** 2.0
+**Status:** Current Implementation
+**Author:** System Analysis
+**Last Updated:** July 30, 2025
+
+## 1. Introduction
+
+### 1.1. Objective
+
+SignalCX is an AI-powered customer support analytics platform that transforms raw ticket data into actionable insights. The platform leverages advanced generative AI to provide predictive analytics, automated ticket generation, multi-agent analysis, and comprehensive dashboard views for support teams and managers.
+
+### 1.2. Problem Statement
+
+Modern support teams generate massive amounts of ticket data but lack intelligent tools to extract meaningful insights. Traditional support dashboards show historical metrics but fail to provide:
+- Predictive insights for proactive management
+- AI-powered trend analysis and risk detection
+- Automated coaching recommendations
+- Intelligent ticket categorization and sentiment analysis
+- Real-time performance optimization
+
+### 1.3. Target Audience & User Personas
+
+**Primary Users:**
+- Support Managers: Need strategic insights, team performance analytics, and predictive forecasting
+- Support Agents: Require ticket prioritization, AI summaries, and performance tracking
+- Operations Teams: Need system health monitoring and capacity planning
+- Leadership: Require executive dashboards and strategic analytics
+
+## 2. Core Features & Requirements
+
+### 2.1. Authentication & User Management
+
+| Feature ID | Feature | Description | Priority |
+|------------|---------|-------------|----------|
+| AUTH-01 | Supabase Authentication | Google OAuth integration with Supabase backend | Must-have |
+| AUTH-02 | Role-Based Access Control | 5-tier role system (readonly → agent → manager → org_admin → super_admin) | Must-have |
+| AUTH-03 | Team Management | Full team invitation, management, and permission system | Must-have |
+| AUTH-04 | Organization Scoping | Single-company security with application-layer data scoping | Must-have |
+
+### 2.2. AI-Powered Analytics
+
+| Feature ID | Feature | Description | Priority |
+|------------|---------|-------------|----------|
+| AI-01 | Multi-Agent Analysis | Parallel AI processing with Discovery, Performance, Risk, Coaching, and Synthesis agents | Must-have |
+| AI-02 | Predictive Forecasting | AI-powered ticket volume forecasting with confidence intervals | Must-have |
+| AI-03 | Sentiment Analysis | Real-time sentiment classification (Positive/Neutral/Negative) | Must-have |
+| AI-04 | Risk Assessment | SLA breach prediction and at-risk ticket identification | Must-have |
+| AI-05 | Coaching Insights | AI-generated agent coaching recommendations with specific examples | High |
+| AI-06 | Trend Analysis | Automated trend detection and emerging issue identification | High |
+| AI-07 | Social Intelligence | Web-based sentiment analysis for public perception monitoring | Medium |
+
+### 2.3. Data Management
+
+| Feature ID | Feature | Description | Priority |
+|------------|---------|-------------|----------|
+| DATA-01 | Dual Data Modes | Demo mode with AI-generated tickets and Enterprise mode with real data | Must-have |
+| DATA-02 | AI Ticket Generation | Realistic ticket generation with configurable parameters and date controls | Must-have |
+| DATA-03 | Supabase Integration | Real-time data storage and retrieval with PostgreSQL backend | Must-have |
+| DATA-04 | PII Scrubbing | Automated PII detection and scrubbing for AI processing | Must-have |
+| DATA-05 | Data Classification | Built-in data sensitivity classification and access controls | High |
+
+### 2.4. Dashboard & Visualization
+
+| Feature ID | Feature | Description | Priority |
+|------------|---------|-------------|----------|
+| DASH-01 | Advanced Analytics Dashboard | Multi-tab interface with Performance, Risk, and Insights views | Must-have |
+| DASH-02 | Real-time Metrics | Live KPI cards with trend indicators and drill-down capabilities | Must-have |
+| DASH-03 | Interactive Charts | Recharts-powered visualizations with filtering and export | Must-have |
+| DASH-04 | Customizable Layout | Drag-and-drop dashboard customization with persistent layouts | High |
+| DASH-05 | Agent Performance Tracking | Individual agent analytics with tier management | High |
+
+### 2.5. System Architecture
+
+| Feature ID | Feature | Description | Priority |
+|------------|---------|-------------|----------|
+| ARCH-01 | Dual Server Setup | Next.js frontend with separate Genkit AI flows server | Must-have |
+| ARCH-02 | Genkit AI Flows | Structured AI workflows with Zod schemas and type safety | Must-have |
+| ARCH-03 | Server Actions | Next.js Server Actions for secure AI flow communication | Must-have |
+| ARCH-04 | Context Management | React Context for Auth, Settings, and Diagnostics | Must-have |
+| ARCH-05 | TypeScript Integration | Full type safety across frontend and AI flows | Must-have |
+
+## 3. Technical Implementation
+
+### 3.1. Technology Stack
+
+**Frontend:**
+- Next.js 15.3.3 with App Router
+- TypeScript with strict mode
+- ShadCN UI components with Tailwind CSS
+- Recharts for data visualization
+- React Hook Form with Zod validation
+
+**AI & Backend:**
+- Google AI Genkit for AI flows
+- Supabase for authentication and data storage
+- LangChain for multi-agent orchestration
+- Support for multiple AI models (Gemini, Claude, GPT)
+
+**Development & Testing:**
+- Jest with React Testing Library
+- ESLint and Prettier for code quality
+- TypeScript strict mode enforcement
+
+### 3.2. Data Architecture
+
+**Database Schema:**
+- `generated_tickets` - AI-generated demo tickets
+- `user_profiles` - User authentication and roles
+- `team_management` - Organization and team structure
+- `analytics_cache` - Performance optimization cache
+
+**AI Flow Structure:**
+- Input/output schemas with Zod validation
+- Structured JSON output from AI models
+- PII scrubbing before AI processing
+- Error handling and retry logic
+
+### 3.3. Security & Compliance
+
+**Security Features:**
+- Supabase Row Level Security (RLS)
+- Application-layer organization scoping
+- PII detection and scrubbing
+- Secure session management
+- CSRF and XSS protection
+
+## 4. User Experience
+
+### 4.1. Core User Flows
+
+**Manager Dashboard Flow:**
+1. Login with Google OAuth
+2. View executive summary dashboard
+3. Access predictive analytics and risk assessments
+4. Review agent coaching insights
+5. Configure team settings and permissions
+
+**Agent Workflow:**
+1. Access personal performance dashboard
+2. View prioritized ticket queues
+3. Access AI-powered ticket summaries
+4. Track individual performance metrics
+
+### 4.2. Interface Design
+
+**Design System:**
+- Primary color: Purple (#8b5cf6) for analytics focus
+- ShadCN UI component library for consistency
+- Responsive design with mobile-first approach
+- Dark/light theme support
+- Accessibility compliance (WCAG 2.1)
+
+## 5. Success Metrics
+
+### 5.1. Performance Metrics
+- Dashboard load time < 2 seconds
+- AI analysis completion < 30 seconds
+- 99.9% uptime availability
+- Real-time data sync latency < 5 seconds
+
+### 5.2. User Adoption Metrics
+- Daily active users (DAU) growth
+- Feature adoption rates
+- Session duration and engagement
+- User satisfaction scores
+
+### 5.3. Business Impact Metrics
+- Reduction in SLA breach rates
+- Improvement in CSAT scores
+- Increased agent productivity
+- Faster issue resolution times
+
+## 6. Development Workflow
+
+### 6.1. Development Commands
+```bash
+npm run dev              # Start Next.js development server (port 9002)
+npm run genkit:dev       # Start Genkit AI flows server
+npm run build            # Production build
+npm run test             # Run Jest tests
+npm run lint             # ESLint code quality check
+npm run typecheck        # TypeScript validation
+```
+
+### 6.2. Code Quality Standards
+- TypeScript strict mode enforcement
+- ESLint and Prettier configurations
+- Comprehensive test coverage for critical paths
+- Security headers and validation
+- Performance optimization best practices
+
+## 7. Future Roadmap
+
+### 7.1. Phase 2 Features
+- Real-time Zendesk API integration
+- Advanced custom reporting
+- Mobile application support
+- API for third-party integrations
+
+### 7.2. Phase 3 Features
+- Machine learning model customization
+- Advanced workflow automation
+- Enterprise SSO integration
+- Multi-tenant architecture
+
+## 8. Constraints & Assumptions
+
+### 8.1. Technical Constraints
+- Requires Google AI API access
+- Supabase infrastructure dependency
+- Browser compatibility (modern browsers only)
+- Internet connectivity required for AI features
+
+### 8.2. Business Assumptions
+- Users have Google accounts for OAuth
+- Organizations willing to adopt AI-powered insights
+- Sufficient ticket volume for meaningful analytics
+- IT team support for deployment and maintenance
+
+## 9. Out of Scope (Current Version)
+
+**Explicitly excluded features:**
+- Direct ticket modification capabilities
+- Real-time streaming data updates
+- Custom AI model training
+- Advanced user management hierarchies
+- Multi-language support
+- Mobile native applications
+
+## 10. Conclusion
+
+SignalCX represents a comprehensive AI-powered support analytics platform that transforms traditional reactive support management into proactive, data-driven operations. The platform's dual-server architecture, multi-agent AI system, and comprehensive dashboard capabilities provide organizations with unprecedented visibility into their support operations and customer satisfaction drivers.
+
+The current implementation provides a solid foundation for both demo and enterprise deployments, with clear pathways for future enhancement and scalability.

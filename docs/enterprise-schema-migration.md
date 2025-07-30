@@ -241,7 +241,7 @@ const piiDetectionRules = {
 - **Batch Size**: 1000 tickets per batch
 - **Concurrency**: 5 parallel migration workers
 - **Estimated Duration**: 1 hour per 100K tickets
-- **Resource Usage**: Monitor Firestore read/write quotas
+- **Resource Usage**: Monitor read/write quotas
 
 ### Post-Migration Performance
 

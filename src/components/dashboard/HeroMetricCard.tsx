@@ -67,7 +67,7 @@ export const HeroMetricCard: React.FC<HeroMetricCardProps> = ({
   className,
   onClick
 }) => {
-  const percentage = Math.min((value / maxValue) * 100, 100);
+  const percentage = typeof value === 'number' && maxValue > 0 ? Math.min((value / maxValue) * 100, 100) : 0;
   const circumference = 2 * Math.PI * 45; // radius = 45
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
@@ -90,9 +90,14 @@ export const HeroMetricCard: React.FC<HeroMetricCardProps> = ({
             <Icon className="h-5 w-5" />
           </div>
           {trend !== undefined && (
-            <div className={cn('flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium', trendColors)}>
-              <TrendIcon className="h-3 w-3" />
-              <span>{Math.abs(trend).toFixed(1)}%</span>
+            <div className="flex items-center space-x-2">
+              <div className={cn('flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium', trendColors)}>
+                <TrendIcon className="h-3 w-3" />
+                <span>{Math.abs(trend).toFixed(1)}%</span>
+              </div>
+              <div className="text-muted-foreground hover:text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </div>
             </div>
           )}
         </div>

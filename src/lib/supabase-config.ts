@@ -77,7 +77,7 @@ export type Database = {
           organization_id: string
           is_active: boolean
           email_verified: boolean | null
-          firebase_uid: string | null
+          
           invited_by: string | null
           created_at: string
           updated_at: string

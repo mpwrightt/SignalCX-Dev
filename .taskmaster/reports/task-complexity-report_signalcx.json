@@ -1,0 +1,101 @@
+{
+	"meta": {
+		"generatedAt": "2025-07-30T18:11:08.422Z",
+		"tasksAnalyzed": 11,
+		"totalTasks": 20,
+		"analysisCount": 11,
+		"thresholdScore": 5,
+		"projectName": "Testing Dev",
+		"usedResearch": false
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 5,
+			"taskTitle": "Setup Organization Scoping",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Consider adding a subtask for monitoring and logging access attempts to ensure compliance and detect unauthorized access.",
+			"reasoning": "The task involves configuring security policies and integrating them with authentication, which requires careful planning and testing. It is moderately complex due to the need for precise security configurations and testing."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Implement Predictive Forecasting",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Add a subtask for continuous model training and improvement based on new data to maintain forecasting accuracy.",
+			"reasoning": "Developing AI models for forecasting involves selecting appropriate models, implementing algorithms, and integrating them into a dashboard, which is complex due to the need for accuracy and real-time data handling."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Integrate Sentiment Analysis",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Include a subtask for handling edge cases and improving model accuracy with diverse datasets.",
+			"reasoning": "The task requires selecting and integrating AI models for real-time sentiment analysis, which involves technical complexity in model selection, integration, and performance optimization."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Develop Risk Assessment Feature",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Consider adding a subtask for user feedback collection to refine risk assessment accuracy and usability.",
+			"reasoning": "This task involves AI model development for predicting SLA breaches and integrating results into a dashboard, which is complex due to the need for accurate predictions and seamless integration."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Implement Coaching Insights",
+			"complexityScore": 6,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Add a subtask for gathering feedback from agents and managers to improve the relevance of coaching insights.",
+			"reasoning": "The task involves generating AI-based coaching insights and displaying them, which is moderately complex due to the need for accurate and relevant insights."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Develop Trend Analysis Feature",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Include a subtask for continuous monitoring and updating of trend detection algorithms to adapt to new patterns.",
+			"reasoning": "Implementing trend detection using AI requires data preprocessing, model development, and dashboard integration, which is complex due to the need for accuracy and real-time updates."
+		},
+		{
+			"taskId": 15,
+			"taskTitle": "Implement PII Scrubbing",
+			"complexityScore": 9,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Consider adding a subtask for regular audits and updates to the PII detection algorithm to ensure compliance with evolving regulations.",
+			"reasoning": "The task involves developing AI-based PII detection and scrubbing, which is highly complex due to the need for accuracy, compliance with privacy standards, and integration with existing systems."
+		},
+		{
+			"taskId": 16,
+			"taskTitle": "Develop Data Classification System",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Add a subtask for training and awareness sessions for users on data sensitivity and access control policies.",
+			"reasoning": "Classifying data and implementing access controls involves defining sensitivity levels and ensuring secure data management, which is moderately complex due to the need for precise policy enforcement."
+		},
+		{
+			"taskId": 18,
+			"taskTitle": "Implement Real-time Metrics",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Include a subtask for performance optimization to ensure real-time data updates without latency.",
+			"reasoning": "Developing real-time KPI cards with trend indicators and drill-down capabilities is complex due to the need for real-time data handling and interactive features."
+		},
+		{
+			"taskId": 19,
+			"taskTitle": "Develop Interactive Charts",
+			"complexityScore": 6,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Consider adding a subtask for user training on chart functionalities to enhance user experience.",
+			"reasoning": "Creating interactive charts with filtering and export options involves integrating Recharts and ensuring usability, which is moderately complex due to the need for responsive and user-friendly design."
+		},
+		{
+			"taskId": 20,
+			"taskTitle": "Implement Customizable Dashboard Layout",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Add a subtask for testing layout persistence across different devices and browsers to ensure consistent user experience.",
+			"reasoning": "Developing a customizable dashboard with drag-and-drop features and persistent layouts is moderately complex due to the need for seamless user interaction and data persistence."
+		}
+	]
+}

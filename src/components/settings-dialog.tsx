@@ -222,8 +222,8 @@ export function SettingsDialog({
     setIsGenerating(true);
     setAiClearResult(null);
     try {
-      console.log('[DEBUG] Clear tickets not implemented - functionality removed during Firebase migration');
-      setAiClearResult('Clear functionality not available after Firebase migration.');
+      console.log('[DEBUG] Clear tickets not implemented - functionality removed');
+      setAiClearResult('Clear functionality not available.');
     } catch (error) {
       setAiClearResult('Failed to clear tickets.');
     } finally {

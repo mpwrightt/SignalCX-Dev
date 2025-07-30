@@ -5,7 +5,7 @@ import type { AuthenticatedUser } from '@/lib/types';
 import { 
   getUserById, 
   signInWithGoogle,
-  signOut as firebaseSignOut,
+  
   loginDemo,
   onAuthStateChange
 } from '@/lib/auth-service-enhanced';
@@ -347,10 +347,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     try {
-      // Sign out from Firebase if in enterprise mode
-      if (sessionMode === 'enterprise') {
-        await firebaseSignOut();
-      }
       
       // Clear session storage for demo mode
       if (sessionMode === 'demo') {
@@ -363,7 +359,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      // Force logout even if Firebase signout fails
       setUser(null);
       setSessionMode(null);
       window.sessionStorage.removeItem(AUTH_SESSION_KEY);

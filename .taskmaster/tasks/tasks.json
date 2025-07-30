@@ -1,0 +1,1361 @@
+{
+  "signalcx": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Project Repository",
+        "description": "Initialize the project repository with necessary configurations and tools.",
+        "details": "Create a new Git repository for the SignalCX project. Set up the project structure with Next.js, TypeScript, ESLint, Prettier, and Jest. Ensure all development commands are available in package.json.",
+        "testStrategy": "Verify that the repository initializes correctly and all development commands execute without errors.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Git Repository",
+            "description": "Initialize a new Git repository for the SignalCX project.",
+            "dependencies": [],
+            "details": "Use Git to create a new repository and set up the initial commit.",
+            "status": "done",
+            "testStrategy": "Verify that the repository is initialized and accessible."
+          },
+          {
+            "id": 2,
+            "title": "Set Up Next.js and TypeScript",
+            "description": "Configure the project structure with Next.js and TypeScript.",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "Install Next.js and TypeScript, and configure the project to use them.",
+            "status": "done",
+            "testStrategy": "Run the development server to ensure Next.js and TypeScript are set up correctly."
+          },
+          {
+            "id": 3,
+            "title": "Integrate ESLint and Prettier",
+            "description": "Add ESLint and Prettier for code linting and formatting.",
+            "dependencies": [
+              "1.2"
+            ],
+            "details": "Install ESLint and Prettier, and configure them in the project.",
+            "status": "done",
+            "testStrategy": "Run linting and formatting commands to ensure they work without errors."
+          },
+          {
+            "id": 4,
+            "title": "Configure Jest for Testing",
+            "description": "Set up Jest for unit testing in the project.",
+            "dependencies": [
+              "1.2"
+            ],
+            "details": "Install Jest and configure it to work with TypeScript and Next.js.",
+            "status": "done",
+            "testStrategy": "Run sample tests to verify Jest is set up correctly."
+          },
+          {
+            "id": 5,
+            "title": "Define Development Commands",
+            "description": "Ensure all development commands are available in package.json.",
+            "dependencies": [
+              "1.3",
+              "1.4"
+            ],
+            "details": "Add scripts for starting the development server, running tests, and linting.",
+            "status": "done",
+            "testStrategy": "Execute each command to confirm they work as expected."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Implement Supabase Authentication",
+        "description": "Integrate Google OAuth with Supabase for user authentication.",
+        "details": "Use Supabase's authentication module to enable Google OAuth. Configure the Supabase backend to handle OAuth tokens and user sessions securely.",
+        "testStrategy": "Test login and logout flows with Google OAuth to ensure users can authenticate successfully.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set Up Supabase Project",
+            "description": "Create and configure a new Supabase project to enable authentication features.",
+            "dependencies": [],
+            "details": "Sign up for Supabase and create a new project. Ensure the project is configured to support authentication modules.",
+            "status": "done",
+            "testStrategy": "Verify that the Supabase project is accessible and authentication modules are enabled."
+          },
+          {
+            "id": 2,
+            "title": "Enable Google OAuth in Supabase",
+            "description": "Configure Supabase to support Google OAuth for user authentication.",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "Access the Supabase dashboard and enable Google OAuth under authentication settings.",
+            "status": "done",
+            "testStrategy": "Test the Google OAuth configuration by attempting to log in with a Google account."
+          },
+          {
+            "id": 3,
+            "title": "Configure Backend for OAuth Tokens",
+            "description": "Set up the Supabase backend to securely handle OAuth tokens.",
+            "dependencies": [
+              "2.2"
+            ],
+            "details": "Implement backend logic to manage OAuth tokens, ensuring secure storage and retrieval.",
+            "status": "done",
+            "testStrategy": "Verify that OAuth tokens are securely stored and can be retrieved without errors."
+          },
+          {
+            "id": 4,
+            "title": "Implement User Session Management",
+            "description": "Develop functionality to manage user sessions using Supabase.",
+            "dependencies": [
+              "2.3"
+            ],
+            "details": "Create session management logic to handle user logins, logouts, and session persistence.",
+            "status": "done",
+            "testStrategy": "Test session persistence by logging in and out, ensuring sessions are maintained correctly."
+          },
+          {
+            "id": 5,
+            "title": "Test Google OAuth Integration",
+            "description": "Conduct comprehensive testing of the Google OAuth integration with Supabase.",
+            "dependencies": [
+              "2.4"
+            ],
+            "details": "Perform end-to-end testing of the login and logout flows using Google OAuth.",
+            "status": "done",
+            "testStrategy": "Ensure users can authenticate successfully and sessions are managed correctly."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Develop Role-Based Access Control",
+        "description": "Implement a 5-tier role system for access control.",
+        "details": "Define roles in Supabase and implement access control logic in the application. Ensure roles are assigned correctly and permissions are enforced at the application layer.",
+        "testStrategy": "Create test users with different roles and verify access permissions for each role.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Role Hierarchy",
+            "description": "Establish a 5-tier role hierarchy in Supabase.",
+            "dependencies": [],
+            "details": "Create roles such as Admin, Manager, Editor, Viewer, and Guest in Supabase.",
+            "status": "done",
+            "testStrategy": "Verify that each role is created and visible in the Supabase dashboard."
+          },
+          {
+            "id": 2,
+            "title": "Implement Role Assignment Logic",
+            "description": "Develop logic to assign roles to users within the application.",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Create functions to assign and update user roles based on predefined criteria.",
+            "status": "done",
+            "testStrategy": "Test role assignment by assigning roles to test users and verifying correct assignment."
+          },
+          {
+            "id": 3,
+            "title": "Develop Access Control Logic",
+            "description": "Implement access control logic in the application based on roles.",
+            "dependencies": [
+              "3.1",
+              "3.2"
+            ],
+            "details": "Ensure that application features are accessible based on user roles.",
+            "status": "done",
+            "testStrategy": "Create test scenarios to verify that users can only access features permitted by their roles."
+          },
+          {
+            "id": 4,
+            "title": "Integrate Role-Based Permissions",
+            "description": "Integrate role-based permissions into the application layer.",
+            "dependencies": [
+              "3.3"
+            ],
+            "details": "Modify application code to enforce permissions at the application layer.",
+            "status": "done",
+            "testStrategy": "Test application behavior by attempting unauthorized actions with different roles."
+          },
+          {
+            "id": 5,
+            "title": "Conduct Role-Based Access Testing",
+            "description": "Test the entire role-based access control system.",
+            "dependencies": [
+              "3.4"
+            ],
+            "details": "Create test users with each role and verify that access permissions are correctly enforced.",
+            "status": "done",
+            "testStrategy": "Perform comprehensive testing to ensure all roles and permissions function as expected."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement Team Management System",
+        "description": "Develop a system for team invitation, management, and permissions.",
+        "details": "Create endpoints for inviting users to teams, managing team members, and setting permissions. Use Supabase for data storage and retrieval.",
+        "testStrategy": "Test team creation, user invitation, and permission changes to ensure functionality works as expected.",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Team Invitation Endpoint",
+            "description": "Develop an API endpoint to invite users to join a team.",
+            "dependencies": [],
+            "details": "Implement the endpoint to handle user invitations, sending email notifications, and storing invitation status in Supabase.",
+            "status": "done",
+            "testStrategy": "Test the invitation process by sending invites and verifying email notifications and status updates in the database."
+          },
+          {
+            "id": 2,
+            "title": "Develop Team Management Endpoint",
+            "description": "Create an API endpoint for managing team members.",
+            "dependencies": [
+              "4.1"
+            ],
+            "details": "Implement functionality to add, remove, and update team members using Supabase for data storage.",
+            "status": "done",
+            "testStrategy": "Verify team member management by adding, removing, and updating members, ensuring changes reflect in the database."
+          },
+          {
+            "id": 3,
+            "title": "Implement Permissions Management",
+            "description": "Set up an API endpoint to manage user permissions within a team.",
+            "dependencies": [
+              "4.2"
+            ],
+            "details": "Develop logic to assign and modify permissions for team members, storing permissions data in Supabase.",
+            "status": "done",
+            "testStrategy": "Test permission changes by assigning different roles and verifying access levels for team members."
+          },
+          {
+            "id": 4,
+            "title": "Integrate Supabase for Data Storage",
+            "description": "Configure Supabase to store and retrieve team management data.",
+            "dependencies": [],
+            "details": "Set up Supabase tables and configure access rules for storing team, member, and permission data.",
+            "status": "done",
+            "testStrategy": "Ensure data is correctly stored and retrieved by performing CRUD operations on team-related data."
+          },
+          {
+            "id": 5,
+            "title": "Conduct End-to-End Testing",
+            "description": "Perform comprehensive testing of the team management system.",
+            "dependencies": [
+              "4.1",
+              "4.2",
+              "4.3",
+              "4.4"
+            ],
+            "details": "Test the complete workflow from team creation to invitation, management, and permission setting.",
+            "status": "done",
+            "testStrategy": "Simulate real-world scenarios to validate the entire system's functionality and data integrity."
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Setup Organization Scoping",
+        "description": "Implement single-company security with application-layer data scoping.",
+        "details": "Configure Supabase Row Level Security (RLS) to enforce organization scoping. Ensure data access is restricted to users within the same organization.",
+        "testStrategy": "Attempt data access with users from different organizations to verify scoping restrictions.",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Organization Scoping Requirements",
+            "description": "Identify and document the specific requirements for organization scoping within the application.",
+            "dependencies": [],
+            "details": "Gather input from stakeholders to understand how organization boundaries should be enforced.",
+            "status": "pending",
+            "testStrategy": "Review documentation with stakeholders to ensure all requirements are captured accurately."
+          },
+          {
+            "id": 2,
+            "title": "Configure Supabase RLS Policies",
+            "description": "Set up Row Level Security policies in Supabase to enforce organization scoping.",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "Create RLS policies that restrict data access to users within the same organization.",
+            "status": "pending",
+            "testStrategy": "Verify that RLS policies are correctly restricting data access based on organization."
+          },
+          {
+            "id": 3,
+            "title": "Implement User Organization Assignment",
+            "description": "Develop functionality to assign users to specific organizations within the application.",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "Ensure that each user is associated with an organization ID in the database.",
+            "status": "pending",
+            "testStrategy": "Test user assignment to organizations and verify correct organization ID is stored."
+          },
+          {
+            "id": 4,
+            "title": "Integrate Organization Scoping with Authentication",
+            "description": "Ensure that organization scoping is integrated with the authentication process.",
+            "dependencies": [
+              "5.2",
+              "5.3"
+            ],
+            "details": "Modify authentication logic to include organization scoping checks during user login.",
+            "status": "pending",
+            "testStrategy": "Test login process to ensure users can only access data from their assigned organization."
+          },
+          {
+            "id": 5,
+            "title": "Validate Organization Scoping Implementation",
+            "description": "Conduct comprehensive testing to validate that organization scoping is correctly implemented.",
+            "dependencies": [
+              "5.4"
+            ],
+            "details": "Perform tests with users from different organizations to ensure data access is restricted appropriately.",
+            "status": "pending",
+            "testStrategy": "Attempt data access with users from different organizations and verify that access is denied."
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Develop Multi-Agent Analysis Feature",
+        "description": "Implement parallel AI processing with multiple agents for analysis.",
+        "details": "Use LangChain to orchestrate multi-agent AI processing. Implement Discovery, Performance, Risk, Coaching, and Synthesis agents using Google AI Genkit.",
+        "testStrategy": "Run test scenarios to ensure each agent processes data correctly and outputs expected results.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set Up LangChain Environment",
+            "description": "Initialize and configure LangChain for orchestrating multi-agent AI processing.",
+            "dependencies": [],
+            "details": "Install LangChain and configure the environment to support multi-agent orchestration.",
+            "status": "done",
+            "testStrategy": "Verify LangChain installation and configuration by running a basic multi-agent orchestration test."
+          },
+          {
+            "id": 2,
+            "title": "Implement Discovery Agent",
+            "description": "Develop the Discovery agent using Google AI Genkit to identify key data points.",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "Use Google AI Genkit to create an agent that can discover and extract relevant data points.",
+            "status": "done",
+            "testStrategy": "Test the Discovery agent by running scenarios to ensure it correctly identifies and extracts data."
+          },
+          {
+            "id": 3,
+            "title": "Implement Performance Agent",
+            "description": "Develop the Performance agent to analyze data and provide performance metrics.",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "Create an agent using Google AI Genkit that analyzes data for performance metrics.",
+            "status": "done",
+            "testStrategy": "Run performance analysis scenarios to verify the agent's accuracy in providing metrics."
+          },
+          {
+            "id": 4,
+            "title": "Implement Risk Agent",
+            "description": "Develop the Risk agent to assess potential risks using AI.",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "Use Google AI Genkit to create an agent that assesses risks and identifies potential issues.",
+            "status": "done",
+            "testStrategy": "Simulate risk scenarios to ensure the agent accurately identifies and assesses risks."
+          },
+          {
+            "id": 5,
+            "title": "Integrate and Test Multi-Agent System",
+            "description": "Integrate all agents and test the complete multi-agent analysis feature.",
+            "dependencies": [
+              "6.2",
+              "6.3",
+              "6.4"
+            ],
+            "details": "Combine all developed agents into a cohesive system and conduct comprehensive testing.",
+            "status": "done",
+            "testStrategy": "Run end-to-end tests to ensure all agents work together seamlessly and produce expected results."
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Implement Predictive Forecasting",
+        "description": "Develop AI-powered ticket volume forecasting with confidence intervals.",
+        "details": "Utilize AI models to predict ticket volumes. Implement confidence interval calculations and integrate results into the dashboard.",
+        "testStrategy": "Validate forecasting accuracy with historical data and compare against actual ticket volumes.",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Select AI Models for Forecasting",
+            "description": "Identify and select appropriate AI models for predicting ticket volumes.",
+            "dependencies": [],
+            "details": "Research and evaluate different AI models suitable for time-series forecasting of ticket volumes.",
+            "status": "pending",
+            "testStrategy": "Compare model performance using historical ticket data to select the most accurate model."
+          },
+          {
+            "id": 2,
+            "title": "Develop Forecasting Algorithm",
+            "description": "Implement the chosen AI model to forecast ticket volumes.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Develop the algorithm using the selected AI model to generate ticket volume forecasts.",
+            "status": "pending",
+            "testStrategy": "Validate the algorithm's accuracy by comparing forecasted volumes with historical data."
+          },
+          {
+            "id": 3,
+            "title": "Calculate Confidence Intervals",
+            "description": "Implement calculations for confidence intervals around the forecasted ticket volumes.",
+            "dependencies": [
+              "7.2"
+            ],
+            "details": "Use statistical methods to calculate confidence intervals for the forecasts.",
+            "status": "pending",
+            "testStrategy": "Ensure confidence intervals are correctly calculated and reflect the forecast's uncertainty."
+          },
+          {
+            "id": 4,
+            "title": "Integrate Forecasts into Dashboard",
+            "description": "Display the forecasted ticket volumes and confidence intervals on the dashboard.",
+            "dependencies": [
+              "7.3"
+            ],
+            "details": "Develop the dashboard interface to visualize the forecasts and confidence intervals.",
+            "status": "pending",
+            "testStrategy": "Verify that the dashboard accurately displays the forecast data and intervals."
+          },
+          {
+            "id": 5,
+            "title": "Validate Forecasting System",
+            "description": "Test the entire forecasting system for accuracy and reliability.",
+            "dependencies": [
+              "7.4"
+            ],
+            "details": "Conduct end-to-end testing of the forecasting system using historical and real-time data.",
+            "status": "pending",
+            "testStrategy": "Compare the system's forecasts with actual ticket volumes to assess accuracy and reliability."
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Integrate Sentiment Analysis",
+        "description": "Implement real-time sentiment classification for tickets.",
+        "details": "Use AI models to classify ticket sentiments as Positive, Neutral, or Negative. Display sentiment results in the dashboard.",
+        "testStrategy": "Test sentiment analysis on a variety of ticket samples to ensure classification accuracy.",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Select AI Model for Sentiment Analysis",
+            "description": "Research and select an appropriate AI model for sentiment classification.",
+            "dependencies": [],
+            "details": "Evaluate different AI models based on accuracy, speed, and compatibility with existing systems.",
+            "status": "pending",
+            "testStrategy": "Compare model performance on a sample dataset to ensure it meets accuracy requirements."
+          },
+          {
+            "id": 2,
+            "title": "Integrate AI Model into Ticket System",
+            "description": "Implement the selected AI model into the ticket processing system.",
+            "dependencies": [
+              "8.1"
+            ],
+            "details": "Develop an interface to connect the AI model with the ticket system for real-time sentiment analysis.",
+            "status": "pending",
+            "testStrategy": "Run integration tests to ensure the model processes tickets in real-time without errors."
+          },
+          {
+            "id": 3,
+            "title": "Develop Dashboard for Sentiment Display",
+            "description": "Create a dashboard component to display sentiment analysis results.",
+            "dependencies": [
+              "8.2"
+            ],
+            "details": "Design and implement a user-friendly dashboard that shows sentiment results for each ticket.",
+            "status": "pending",
+            "testStrategy": "Verify that the dashboard updates in real-time and displays accurate sentiment data."
+          },
+          {
+            "id": 4,
+            "title": "Optimize Sentiment Analysis Performance",
+            "description": "Improve the performance of the sentiment analysis process.",
+            "dependencies": [
+              "8.2"
+            ],
+            "details": "Optimize the AI model and system integration to reduce latency and improve processing speed.",
+            "status": "pending",
+            "testStrategy": "Measure processing times and ensure they meet performance benchmarks."
+          },
+          {
+            "id": 5,
+            "title": "Conduct Comprehensive Testing",
+            "description": "Test the entire sentiment analysis integration with various ticket samples.",
+            "dependencies": [
+              "8.3",
+              "8.4"
+            ],
+            "details": "Perform extensive testing to ensure the sentiment analysis is accurate and reliable across different scenarios.",
+            "status": "pending",
+            "testStrategy": "Use a diverse set of ticket samples to validate the accuracy and reliability of sentiment classification."
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Develop Risk Assessment Feature",
+        "description": "Implement SLA breach prediction and at-risk ticket identification.",
+        "details": "Use AI to predict potential SLA breaches and identify at-risk tickets. Integrate risk assessment results into the dashboard.",
+        "testStrategy": "Simulate SLA breach scenarios and verify that the system correctly identifies at-risk tickets.",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Research AI Models for SLA Breach Prediction",
+            "description": "Identify and evaluate AI models suitable for predicting SLA breaches.",
+            "dependencies": [],
+            "details": "Conduct research on AI models that can predict SLA breaches based on historical ticket data.",
+            "status": "pending",
+            "testStrategy": "Review model documentation and performance metrics to ensure suitability for SLA prediction."
+          },
+          {
+            "id": 2,
+            "title": "Develop SLA Breach Prediction Algorithm",
+            "description": "Create an algorithm using the selected AI model to predict SLA breaches.",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "Implement the chosen AI model to develop an algorithm that predicts potential SLA breaches.",
+            "status": "pending",
+            "testStrategy": "Simulate SLA breach scenarios and verify the accuracy of predictions."
+          },
+          {
+            "id": 3,
+            "title": "Identify At-Risk Tickets",
+            "description": "Develop a method to identify tickets at risk of breaching SLAs.",
+            "dependencies": [
+              "9.2"
+            ],
+            "details": "Use the SLA breach prediction algorithm to identify tickets that are at risk.",
+            "status": "pending",
+            "testStrategy": "Test the identification method with historical ticket data to ensure accurate risk assessment."
+          },
+          {
+            "id": 4,
+            "title": "Integrate Risk Assessment into Dashboard",
+            "description": "Incorporate the risk assessment results into the existing dashboard interface.",
+            "dependencies": [
+              "9.3"
+            ],
+            "details": "Modify the dashboard to display SLA breach predictions and at-risk ticket information.",
+            "status": "pending",
+            "testStrategy": "Verify that the dashboard accurately displays risk assessment data and is user-friendly."
+          },
+          {
+            "id": 5,
+            "title": "Validate Risk Assessment Feature",
+            "description": "Conduct comprehensive testing of the risk assessment feature.",
+            "dependencies": [
+              "9.4"
+            ],
+            "details": "Perform end-to-end testing to ensure the feature works as intended and integrates seamlessly with the dashboard.",
+            "status": "pending",
+            "testStrategy": "Simulate various SLA breach scenarios and verify the system's ability to predict and display at-risk tickets."
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Implement Coaching Insights",
+        "description": "Develop AI-generated agent coaching recommendations.",
+        "details": "Use AI models to generate coaching insights and specific examples for agents. Display insights in the manager dashboard.",
+        "testStrategy": "Review generated coaching insights for relevance and accuracy.",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Research AI Models for Coaching Insights",
+            "description": "Identify and evaluate AI models suitable for generating coaching insights.",
+            "dependencies": [],
+            "details": "Conduct research on available AI models that can be used to generate coaching insights for agents.",
+            "status": "pending",
+            "testStrategy": "Ensure selected models have a proven track record in similar applications."
+          },
+          {
+            "id": 2,
+            "title": "Develop AI Model Integration",
+            "description": "Integrate selected AI models into the system for generating coaching insights.",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Implement the integration of AI models into the existing system architecture.",
+            "status": "pending",
+            "testStrategy": "Verify successful integration and data flow between the AI models and the system."
+          },
+          {
+            "id": 3,
+            "title": "Generate Coaching Insights",
+            "description": "Use integrated AI models to generate coaching insights and examples.",
+            "dependencies": [
+              "10.2"
+            ],
+            "details": "Develop functionality to generate actionable coaching insights and examples for agents.",
+            "status": "pending",
+            "testStrategy": "Review generated insights for relevance and accuracy."
+          },
+          {
+            "id": 4,
+            "title": "Design Manager Dashboard Display",
+            "description": "Design and implement the display of coaching insights on the manager dashboard.",
+            "dependencies": [
+              "10.3"
+            ],
+            "details": "Create a user-friendly interface on the manager dashboard to display generated insights.",
+            "status": "pending",
+            "testStrategy": "Test the dashboard for usability and ensure insights are displayed clearly."
+          },
+          {
+            "id": 5,
+            "title": "Validate and Optimize Insights",
+            "description": "Validate the accuracy of coaching insights and optimize the generation process.",
+            "dependencies": [
+              "10.4"
+            ],
+            "details": "Conduct validation tests on the generated insights and refine the process for better accuracy.",
+            "status": "pending",
+            "testStrategy": "Compare insights against expert evaluations and make necessary adjustments."
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Develop Trend Analysis Feature",
+        "description": "Implement automated trend detection and emerging issue identification.",
+        "details": "Use AI to detect trends and emerging issues from ticket data. Display trends in the dashboard with visual indicators.",
+        "testStrategy": "Test trend detection with historical data to ensure accuracy and timely identification.",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Data Collection and Preprocessing",
+            "description": "Gather ticket data and preprocess it for trend analysis.",
+            "dependencies": [],
+            "details": "Collect historical ticket data and clean it to remove noise and irrelevant information.",
+            "status": "pending",
+            "testStrategy": "Verify data integrity and completeness after preprocessing."
+          },
+          {
+            "id": 2,
+            "title": "AI Model Development",
+            "description": "Develop AI models to detect trends and emerging issues.",
+            "dependencies": [
+              "11.1"
+            ],
+            "details": "Create and train machine learning models to identify patterns and trends in the ticket data.",
+            "status": "pending",
+            "testStrategy": "Test model accuracy using a labeled dataset and adjust parameters for optimal performance."
+          },
+          {
+            "id": 3,
+            "title": "Integration with Dashboard",
+            "description": "Integrate trend detection results into the dashboard.",
+            "dependencies": [
+              "11.2"
+            ],
+            "details": "Display detected trends and emerging issues on the dashboard with visual indicators.",
+            "status": "pending",
+            "testStrategy": "Ensure trends are displayed correctly and update in real-time."
+          },
+          {
+            "id": 4,
+            "title": "Visual Indicator Design",
+            "description": "Design visual indicators for trend representation.",
+            "dependencies": [
+              "11.3"
+            ],
+            "details": "Create intuitive visual indicators to represent trends and emerging issues on the dashboard.",
+            "status": "pending",
+            "testStrategy": "Test the clarity and effectiveness of visual indicators with user feedback."
+          },
+          {
+            "id": 5,
+            "title": "System Testing and Validation",
+            "description": "Conduct comprehensive testing of the trend analysis feature.",
+            "dependencies": [
+              "11.4"
+            ],
+            "details": "Perform end-to-end testing to validate the accuracy and reliability of the trend analysis feature.",
+            "status": "pending",
+            "testStrategy": "Use historical data to simulate real-world scenarios and verify system performance."
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Implement Dual Data Modes",
+        "description": "Develop demo and enterprise data modes for ticket handling.",
+        "details": "Create a system to switch between AI-generated demo tickets and real enterprise data. Ensure seamless data mode transitions.",
+        "testStrategy": "Switch between data modes and verify data integrity and functionality in each mode.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Data Mode Architecture",
+            "description": "Create a high-level architecture for dual data modes.",
+            "dependencies": [],
+            "details": "Outline the system architecture to support both demo and enterprise data modes, ensuring scalability and security.",
+            "status": "done",
+            "testStrategy": "Review the architecture design for completeness and alignment with project requirements."
+          },
+          {
+            "id": 2,
+            "title": "Develop Demo Mode Functionality",
+            "description": "Implement the functionality to generate and manage AI-generated demo tickets.",
+            "dependencies": [
+              "12.1"
+            ],
+            "details": "Create a module to generate demo tickets using AI and manage them within the system.",
+            "status": "done",
+            "testStrategy": "Verify that demo tickets are generated correctly and can be managed independently of enterprise data."
+          },
+          {
+            "id": 3,
+            "title": "Develop Enterprise Mode Functionality",
+            "description": "Implement the functionality to handle real enterprise data.",
+            "dependencies": [
+              "12.1"
+            ],
+            "details": "Develop the system to securely handle and process real enterprise ticket data.",
+            "status": "done",
+            "testStrategy": "Ensure enterprise data is processed accurately and securely, with no data loss."
+          },
+          {
+            "id": 4,
+            "title": "Implement Data Mode Switching Mechanism",
+            "description": "Create a mechanism to switch between demo and enterprise data modes seamlessly.",
+            "dependencies": [
+              "12.2",
+              "12.3"
+            ],
+            "details": "Develop a user interface and backend logic to allow seamless switching between data modes.",
+            "status": "done",
+            "testStrategy": "Test the switching mechanism to ensure smooth transitions without data corruption."
+          },
+          {
+            "id": 5,
+            "title": "Validate Data Integrity Across Modes",
+            "description": "Ensure data integrity and functionality in both demo and enterprise modes.",
+            "dependencies": [
+              "12.4"
+            ],
+            "details": "Conduct thorough testing to verify that data remains intact and functional when switching modes.",
+            "status": "done",
+            "testStrategy": "Perform comprehensive tests to validate data integrity and system functionality in both modes."
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Develop AI Ticket Generation",
+        "description": "Implement realistic ticket generation with configurable parameters.",
+        "details": "Use AI to generate realistic tickets with configurable parameters and date controls. Integrate with the demo mode.",
+        "testStrategy": "Generate tickets with various configurations and verify realism and parameter adherence.",
+        "priority": "medium",
+        "dependencies": [
+          12
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Configurable Parameters",
+            "description": "Identify and define the parameters that can be configured for ticket generation.",
+            "dependencies": [],
+            "details": "Research and list all possible parameters that can be adjusted for ticket generation, such as priority, category, and status.",
+            "status": "done",
+            "testStrategy": "Verify that all defined parameters are configurable and correctly influence ticket generation."
+          },
+          {
+            "id": 2,
+            "title": "Develop AI Model for Ticket Generation",
+            "description": "Create an AI model capable of generating realistic tickets based on defined parameters.",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Utilize machine learning techniques to develop a model that generates tickets with realistic data.",
+            "status": "done",
+            "testStrategy": "Test the AI model with various parameter configurations to ensure realistic ticket generation."
+          },
+          {
+            "id": 3,
+            "title": "Implement Date Control Features",
+            "description": "Add functionality to control the date and time aspects of ticket generation.",
+            "dependencies": [
+              "13.2"
+            ],
+            "details": "Develop features that allow users to set specific date and time parameters for ticket generation.",
+            "status": "done",
+            "testStrategy": "Ensure that date controls accurately affect the generated tickets' timestamps."
+          },
+          {
+            "id": 4,
+            "title": "Integrate with Demo Mode",
+            "description": "Ensure the AI ticket generation feature is integrated with the application's demo mode.",
+            "dependencies": [
+              "13.3"
+            ],
+            "details": "Modify the application to include the AI ticket generation feature in demo mode, ensuring seamless operation.",
+            "status": "done",
+            "testStrategy": "Test the demo mode to verify that ticket generation functions correctly and showcases all features."
+          },
+          {
+            "id": 5,
+            "title": "Conduct Comprehensive Testing",
+            "description": "Perform extensive testing to verify the realism and parameter adherence of generated tickets.",
+            "dependencies": [
+              "13.4"
+            ],
+            "details": "Develop a testing framework to evaluate the quality and accuracy of generated tickets under various configurations.",
+            "status": "done",
+            "testStrategy": "Generate tickets with different configurations and assess their realism and adherence to parameters."
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Integrate Supabase for Data Management",
+        "description": "Implement real-time data storage and retrieval using Supabase.",
+        "details": "Configure Supabase to store and retrieve ticket data in real-time. Ensure data consistency and availability.",
+        "testStrategy": "Perform CRUD operations on ticket data and verify real-time updates and retrievals.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set Up Supabase Project",
+            "description": "Create a new Supabase project and configure the initial settings.",
+            "dependencies": [],
+            "details": "Sign up for Supabase, create a new project, and configure the database settings for ticket data.",
+            "status": "done",
+            "testStrategy": "Verify that the Supabase project is accessible and the database is correctly initialized."
+          },
+          {
+            "id": 2,
+            "title": "Design Database Schema",
+            "description": "Design and implement the database schema for storing ticket data.",
+            "dependencies": [
+              "14.1"
+            ],
+            "details": "Define tables and relationships in Supabase to store ticket information, ensuring data normalization.",
+            "status": "done",
+            "testStrategy": "Check the schema by inserting sample data and verifying the structure and relationships."
+          },
+          {
+            "id": 3,
+            "title": "Implement Real-Time Data Retrieval",
+            "description": "Set up real-time data retrieval for ticket updates using Supabase.",
+            "dependencies": [
+              "14.2"
+            ],
+            "details": "Configure Supabase to push updates to the client in real-time when ticket data changes.",
+            "status": "done",
+            "testStrategy": "Perform updates on ticket data and verify that changes are reflected in real-time on the client side."
+          },
+          {
+            "id": 4,
+            "title": "Ensure Data Consistency and Availability",
+            "description": "Implement mechanisms to ensure data consistency and availability in Supabase.",
+            "dependencies": [
+              "14.3"
+            ],
+            "details": "Use Supabase features like transactions and replication to maintain data integrity and availability.",
+            "status": "done",
+            "testStrategy": "Simulate concurrent data operations and verify that data remains consistent and available."
+          },
+          {
+            "id": 5,
+            "title": "Perform CRUD Operations Testing",
+            "description": "Test CRUD operations on the ticket data to ensure functionality.",
+            "dependencies": [
+              "14.4"
+            ],
+            "details": "Conduct tests for creating, reading, updating, and deleting ticket data in Supabase.",
+            "status": "done",
+            "testStrategy": "Execute CRUD operations and verify that each operation performs as expected with real-time updates."
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Implement PII Scrubbing",
+        "description": "Develop automated PII detection and scrubbing for AI processing.",
+        "details": "Use AI to detect and scrub PII from ticket data before processing. Ensure compliance with data privacy standards.",
+        "testStrategy": "Test PII scrubbing on sample data to ensure all sensitive information is removed.",
+        "priority": "high",
+        "dependencies": [
+          14
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Research PII Detection Techniques",
+            "description": "Investigate and select AI models suitable for detecting PII in ticket data.",
+            "dependencies": [],
+            "details": "Explore various AI models and libraries that specialize in PII detection, focusing on accuracy and efficiency.",
+            "status": "pending",
+            "testStrategy": "Evaluate selected models on a dataset with known PII to determine detection accuracy."
+          },
+          {
+            "id": 2,
+            "title": "Develop PII Detection Module",
+            "description": "Implement the chosen AI model for PII detection in the system.",
+            "dependencies": [
+              "15.1"
+            ],
+            "details": "Integrate the selected AI model into the existing system to identify PII in ticket data.",
+            "status": "pending",
+            "testStrategy": "Run the detection module on sample ticket data to ensure PII is correctly identified."
+          },
+          {
+            "id": 3,
+            "title": "Design PII Scrubbing Algorithm",
+            "description": "Create an algorithm to effectively scrub detected PII from ticket data.",
+            "dependencies": [
+              "15.2"
+            ],
+            "details": "Develop a scrubbing algorithm that removes or masks PII while maintaining data integrity.",
+            "status": "pending",
+            "testStrategy": "Test the scrubbing algorithm on sample data to verify that all PII is removed or masked."
+          },
+          {
+            "id": 4,
+            "title": "Integrate PII Scrubbing with AI Processing",
+            "description": "Ensure the scrubbing process is integrated with the AI processing pipeline.",
+            "dependencies": [
+              "15.3"
+            ],
+            "details": "Modify the AI processing pipeline to include the PII scrubbing step before any data processing.",
+            "status": "pending",
+            "testStrategy": "Validate the integration by processing data through the pipeline and confirming no PII is present in the output."
+          },
+          {
+            "id": 5,
+            "title": "Ensure Compliance with Data Privacy Standards",
+            "description": "Review and update the system to ensure compliance with relevant data privacy regulations.",
+            "dependencies": [
+              "15.4"
+            ],
+            "details": "Conduct a compliance audit to verify that the PII scrubbing process meets all necessary data privacy standards.",
+            "status": "pending",
+            "testStrategy": "Perform a compliance check against current data privacy laws and regulations to ensure adherence."
+          }
+        ]
+      },
+      {
+        "id": 16,
+        "title": "Develop Data Classification System",
+        "description": "Implement data sensitivity classification and access controls.",
+        "details": "Classify data based on sensitivity and implement access controls accordingly. Use Supabase for data storage and access management.",
+        "testStrategy": "Classify sample data and verify access control enforcement based on classification.",
+        "priority": "medium",
+        "dependencies": [
+          14
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Data Sensitivity Levels",
+            "description": "Establish and document the criteria for different data sensitivity levels.",
+            "dependencies": [],
+            "details": "Create a comprehensive guide outlining the sensitivity levels such as public, internal, confidential, and restricted.",
+            "status": "pending",
+            "testStrategy": "Review the documentation with stakeholders to ensure clarity and completeness."
+          },
+          {
+            "id": 2,
+            "title": "Classify Existing Data",
+            "description": "Apply the defined sensitivity levels to existing data within the system.",
+            "dependencies": [
+              "16.1"
+            ],
+            "details": "Audit current data and categorize it according to the established sensitivity levels.",
+            "status": "pending",
+            "testStrategy": "Verify that data has been correctly classified by sampling and cross-checking with the criteria."
+          },
+          {
+            "id": 3,
+            "title": "Implement Access Control Policies",
+            "description": "Develop and enforce access control policies based on data sensitivity classifications.",
+            "dependencies": [
+              "16.2"
+            ],
+            "details": "Use Supabase to configure access controls ensuring that only authorized users can access sensitive data.",
+            "status": "pending",
+            "testStrategy": "Test access restrictions by attempting unauthorized access and ensuring it is blocked."
+          },
+          {
+            "id": 4,
+            "title": "Integrate with Supabase",
+            "description": "Set up Supabase for data storage and access management.",
+            "dependencies": [
+              "16.3"
+            ],
+            "details": "Configure Supabase to store classified data and manage access controls efficiently.",
+            "status": "pending",
+            "testStrategy": "Verify that data is stored securely and access controls are functioning as intended."
+          },
+          {
+            "id": 5,
+            "title": "Conduct Security Audit",
+            "description": "Perform a security audit to ensure the classification and access control system is robust.",
+            "dependencies": [
+              "16.4"
+            ],
+            "details": "Engage a third-party security expert to audit the system and identify any vulnerabilities.",
+            "status": "pending",
+            "testStrategy": "Review audit findings and implement recommended improvements to enhance security."
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "title": "Develop Advanced Analytics Dashboard",
+        "description": "Create a multi-tab interface with Performance, Risk, and Insights views.",
+        "details": "Use Next.js and Recharts to develop a dashboard with multiple tabs for different analytics views. Ensure responsive design and interactivity.",
+        "testStrategy": "Test dashboard navigation and data visualization for accuracy and responsiveness.",
+        "priority": "high",
+        "dependencies": [
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Dashboard Layout",
+            "description": "Create a wireframe for the multi-tab interface including Performance, Risk, and Insights views.",
+            "dependencies": [],
+            "details": "Use design tools to create a responsive layout that accommodates all required views.",
+            "status": "done",
+            "testStrategy": "Review wireframe with stakeholders to ensure it meets requirements."
+          },
+          {
+            "id": 2,
+            "title": "Implement Multi-Tab Navigation",
+            "description": "Develop the navigation system for switching between Performance, Risk, and Insights tabs.",
+            "dependencies": [
+              "17.1"
+            ],
+            "details": "Use Next.js to implement a seamless tab navigation system.",
+            "status": "done",
+            "testStrategy": "Test tab switching for smooth transitions and correct view loading."
+          },
+          {
+            "id": 3,
+            "title": "Develop Performance View",
+            "description": "Create the Performance view using Recharts for data visualization.",
+            "dependencies": [
+              "17.2"
+            ],
+            "details": "Implement charts and graphs to display performance metrics.",
+            "status": "done",
+            "testStrategy": "Verify data accuracy and responsiveness of charts in the Performance view."
+          },
+          {
+            "id": 4,
+            "title": "Develop Risk View",
+            "description": "Integrate the Risk Assessment feature into the Risk view of the dashboard.",
+            "dependencies": [
+              "17.2"
+            ],
+            "details": "Display risk assessment results and visual indicators for at-risk items.",
+            "status": "done",
+            "testStrategy": "Test the Risk view for correct integration of risk data and visual alerts."
+          },
+          {
+            "id": 5,
+            "title": "Develop Insights View",
+            "description": "Implement the Insights view with trend analysis and emerging issue detection.",
+            "dependencies": [
+              "17.2"
+            ],
+            "details": "Use AI-generated insights to populate the Insights view with relevant data.",
+            "status": "done",
+            "testStrategy": "Ensure insights are accurately displayed and updated in real-time."
+          }
+        ]
+      },
+      {
+        "id": 18,
+        "title": "Implement Real-time Metrics",
+        "description": "Develop live KPI cards with trend indicators and drill-down capabilities.",
+        "details": "Use Recharts to display real-time metrics with trend indicators. Implement drill-down capabilities for detailed analysis.",
+        "testStrategy": "Verify real-time updates and drill-down functionality for KPI cards.",
+        "priority": "high",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design KPI Card Layout",
+            "description": "Create the layout for KPI cards including space for trend indicators and drill-down options.",
+            "dependencies": [],
+            "details": "Design wireframes for the KPI cards ensuring they accommodate real-time data and interactive elements.",
+            "status": "pending",
+            "testStrategy": "Review design mockups with stakeholders to ensure all requirements are met."
+          },
+          {
+            "id": 2,
+            "title": "Integrate Recharts for Real-time Data",
+            "description": "Implement Recharts to display real-time metrics on the KPI cards.",
+            "dependencies": [
+              "18.1"
+            ],
+            "details": "Use Recharts library to visualize real-time data on the KPI cards, ensuring smooth updates.",
+            "status": "pending",
+            "testStrategy": "Verify that data updates in real-time on the KPI cards without performance issues."
+          },
+          {
+            "id": 3,
+            "title": "Develop Trend Indicators",
+            "description": "Create trend indicators to show performance trends on the KPI cards.",
+            "dependencies": [
+              "18.2"
+            ],
+            "details": "Implement visual indicators such as arrows or color changes to represent trends in the data.",
+            "status": "pending",
+            "testStrategy": "Test trend indicators with sample data to ensure they accurately reflect data changes."
+          },
+          {
+            "id": 4,
+            "title": "Implement Drill-down Capabilities",
+            "description": "Enable drill-down functionality for detailed analysis of KPI data.",
+            "dependencies": [
+              "18.3"
+            ],
+            "details": "Develop interactive elements that allow users to click on KPI cards to view detailed data.",
+            "status": "pending",
+            "testStrategy": "Test drill-down functionality to ensure users can access detailed views without errors."
+          },
+          {
+            "id": 5,
+            "title": "Validate Real-time Metrics and Drill-down",
+            "description": "Conduct end-to-end testing of real-time metrics and drill-down features.",
+            "dependencies": [
+              "18.4"
+            ],
+            "details": "Perform comprehensive testing to ensure all features work together seamlessly.",
+            "status": "pending",
+            "testStrategy": "Verify that real-time updates and drill-down capabilities function correctly under various scenarios."
+          }
+        ]
+      },
+      {
+        "id": 19,
+        "title": "Develop Interactive Charts",
+        "description": "Implement Recharts-powered visualizations with filtering and export options.",
+        "details": "Use Recharts to create interactive charts with filtering and export capabilities. Ensure charts are responsive and user-friendly.",
+        "testStrategy": "Test chart interactivity, filtering, and export functions for usability and accuracy.",
+        "priority": "medium",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set Up Recharts Environment",
+            "description": "Install and configure Recharts in the project environment.",
+            "dependencies": [],
+            "details": "Ensure Recharts is properly installed and integrated into the project setup.",
+            "status": "pending",
+            "testStrategy": "Verify that Recharts components can be imported and rendered without errors."
+          },
+          {
+            "id": 2,
+            "title": "Design Chart Layouts",
+            "description": "Create initial designs for the interactive charts using Recharts.",
+            "dependencies": [
+              "19.1"
+            ],
+            "details": "Design layouts for different types of charts ensuring they are responsive and user-friendly.",
+            "status": "pending",
+            "testStrategy": "Check the responsiveness and visual appeal of the chart designs across different devices."
+          },
+          {
+            "id": 3,
+            "title": "Implement Filtering Options",
+            "description": "Develop filtering capabilities for the charts to allow dynamic data selection.",
+            "dependencies": [
+              "19.2"
+            ],
+            "details": "Add filtering options to the charts to enable users to select data ranges or categories.",
+            "status": "pending",
+            "testStrategy": "Test filtering functionality to ensure it accurately updates the chart data."
+          },
+          {
+            "id": 4,
+            "title": "Add Export Functionality",
+            "description": "Implement export options for the charts to allow data download.",
+            "dependencies": [
+              "19.3"
+            ],
+            "details": "Enable users to export chart data in various formats such as CSV or PNG.",
+            "status": "pending",
+            "testStrategy": "Verify that the export functionality works correctly and exports data in the selected format."
+          },
+          {
+            "id": 5,
+            "title": "Conduct Usability Testing",
+            "description": "Perform usability testing on the interactive charts to ensure user-friendliness.",
+            "dependencies": [
+              "19.4"
+            ],
+            "details": "Conduct tests with users to gather feedback on the chart interactivity and ease of use.",
+            "status": "pending",
+            "testStrategy": "Collect user feedback and make necessary adjustments to improve the user experience."
+          }
+        ]
+      },
+      {
+        "id": 20,
+        "title": "Implement Customizable Dashboard Layout",
+        "description": "Develop drag-and-drop dashboard customization with persistent layouts.",
+        "details": "Allow users to customize dashboard layout using drag-and-drop. Save layouts persistently for user sessions.",
+        "testStrategy": "Test layout customization and persistence across sessions for functionality and user experience.",
+        "priority": "medium",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Dashboard Layout Interface",
+            "description": "Create the user interface for the dashboard layout customization.",
+            "dependencies": [],
+            "details": "Develop wireframes and mockups for the drag-and-drop dashboard interface.",
+            "status": "pending",
+            "testStrategy": "Review design mockups with stakeholders for approval."
+          },
+          {
+            "id": 2,
+            "title": "Implement Drag-and-Drop Functionality",
+            "description": "Develop the drag-and-drop feature for dashboard widgets.",
+            "dependencies": [
+              "20.1"
+            ],
+            "details": "Use a JavaScript library to enable drag-and-drop functionality for dashboard components.",
+            "status": "pending",
+            "testStrategy": "Test drag-and-drop interactions to ensure smooth user experience."
+          },
+          {
+            "id": 3,
+            "title": "Develop Layout Persistence Mechanism",
+            "description": "Create a system to save and load user-customized layouts.",
+            "dependencies": [
+              "20.2"
+            ],
+            "details": "Implement backend logic to store user layout preferences in a database.",
+            "status": "pending",
+            "testStrategy": "Verify that layouts are saved and restored correctly across sessions."
+          },
+          {
+            "id": 4,
+            "title": "Integrate Layout Customization with User Sessions",
+            "description": "Ensure that layout customizations are linked to user sessions.",
+            "dependencies": [
+              "20.3"
+            ],
+            "details": "Modify session management to include layout data for each user.",
+            "status": "pending",
+            "testStrategy": "Test that different users have their own unique layouts saved and loaded."
+          },
+          {
+            "id": 5,
+            "title": "Conduct Usability Testing",
+            "description": "Perform usability testing to gather feedback on the dashboard customization experience.",
+            "dependencies": [
+              "20.4"
+            ],
+            "details": "Organize sessions with users to test the dashboard customization features.",
+            "status": "pending",
+            "testStrategy": "Collect user feedback and identify areas for improvement in the customization process."
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-30T17:51:03.954Z",
+      "updated": "2025-07-30T18:00:15.555Z",
+      "description": "Tasks for signalcx context"
+    }
+  }
+}

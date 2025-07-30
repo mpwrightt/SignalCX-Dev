@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-// Removed Firebase cache service - using direct Supabase queries
+
 
 // Import all the individual AI flows
 import { getPerformanceForecasts } from '@/ai/flows/get-performance-forecasts';
@@ -167,7 +167,6 @@ export async function POST(req: NextRequest) {
     console.log('[Multi-Agent Diagnostic] Model usage:', modelUsage);
     console.log('[Multi-Agent Diagnostic] Timings:', agentTimings);
     
-    // Note: Caching removed after Firebase migration - results are returned directly
     console.log('📊 Multi-agent analysis completed, returning results directly');
     
     if (userId && organizationId) {

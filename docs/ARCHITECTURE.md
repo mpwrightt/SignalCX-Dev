@@ -8,7 +8,7 @@ SignalCX is a modern full-stack TypeScript application built with the following 
 
 *   **Framework:** [Next.js](https://nextjs.org/) (with App Router)
 *   **Language:** [TypeScript](https://www.typescriptlang.org/)
-*   **Generative AI:** [Google AI & Genkit](https://firebase.google.com/docs/genkit)
+*   **Generative AI:** [Google AI & Genkit](https://ai.google.dev/genkit)
 *   **UI Components:** [ShadCN UI](https://ui.shadcn.com/)
 *   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 *   **Charts:** [Recharts](https://recharts.org/)
@@ -86,7 +86,7 @@ SignalCX now supports a hybrid analytics architecture:
 
 ### Genkit Flows
 
-All generative AI functionality is handled by [Genkit](https://firebase.google.com/docs/genkit) flows, located in `src/ai/flows`. These are server-side TypeScript files that can be called from the frontend or by the agent.
+All generative AI functionality is handled by [Genkit](https://ai.google.dev/genkit) flows, located in `src/ai/flows`. These are server-side TypeScript files that can be called from the frontend or by the agent.
 
 A typical flow follows this pattern:
 1.  **`'use server';`**: This Next.js directive marks the file as a Server Action module, allowing its exported functions to be securely called from client-side components without the need for a separate API layer.

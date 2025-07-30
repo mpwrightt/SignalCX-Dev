@@ -12,7 +12,6 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "migrate:supabase": "tsx scripts/migrate-firebase-to-supabase.ts",
     "validate:migration": "tsx scripts/validate-migration.ts"
   },
   "dependencies": {
